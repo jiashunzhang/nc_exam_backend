@@ -1,0 +1,2610 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+
+        <link rel="stylesheet" href="https://unpkg.com/element-ui@2.4.1/lib/theme-chalk/index.css">
+        <style type="text/css">
+            html, body {
+                margin: 0px;
+                padding: 0px;
+                height: 100%;
+            }
+            .top_banner {
+                width: 100%;
+                height: 100%;
+                border-width: 2px;
+                border-style: solid;
+                border-color: red;
+                border-collapse: collapse;
+                margin: 0px;
+                padding: 0px;
+            }
+            .admin_banner {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+            }
+            .top_banner_text {
+                font-family:'Lucida Grande', Lucida Sans Unicode, Hiragino Sans GB, WenQuanYi Micro Hei, VerDana, Aril, sans-serif;
+                font-size: 36px;
+                text-shadow: 0.1em 0.1em 0.2em black;
+            }
+            .tops_frame_cells {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+            }
+            .tops_frame {
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+            .tops_frame, .tops_frame td, .tops_frame tr {
+                /*border-style: solid;*/
+                /*border-color: #333;*/
+                text-align: center;
+                border-width: 0px;
+                border-collapse: collapse;
+            }
+            .tops_rows {
+                border-bottom-style: ridge;
+                border-bottom-width: 3px !important;
+                border-bottom-color: white;
+                height: 60px;
+            }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js" type="text/javascript"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1" type="text/javascript"></script>
+        <script src="https://unpkg.com/element-ui@2.4.1/lib/index.js" type="text/javascript"></script>
+        <script src="https://cdn.hcharts.cn/highcharts/highcharts.js" type="text/javascript"></script>
+        <script src="https://unpkg.com/xlsx@0.13.0/dist/xlsx.full.min.js" type="text/javascript"></script>
+        <script src="https://cdn.jsdelivr.net/npm/filesaver.js" type="text/javascript"></script>
+    </head>
+    <body>
+        <div id="app" style="width: 100%; height: 100%">
+            <el-container style="height: 100%">
+                <el-header class="admin_banner" style="padding: 0px; background-image: url(./static/admin_top_banner.gif); background-size: 100% 100%; background-repeat: no-repeat">
+                    <span class="top_banner_text">考试管理</span>
+                        {{ tops_date_range }}
+                </el-header>
+                <el-container>
+                    <el-aside width="200px" style="background-color: rgb(238, 241, 246); color: #333">
+                        <h5>选择功能</h5>
+                        <el-menu @select="onAsideMenuSelected">
+                            <el-submenu index="question_library">
+                                <template slot="title">
+                                    <i class="el-icon-document"></i>
+                                    <span slot="title">题库管理</span>
+                                </template>
+                                <el-menu-item index="qbexport">
+                                    <span slot="title">题库导出</span>
+                                </el-menu-item>
+                                <el-menu-item index="qbimport">
+                                    <span slot="title">题库导入</span>
+                                </el-menu-item>
+                                <el-menu-item index="qbedit">
+                                    <span slot="title">题库查询与编辑</span>
+                                </el-menu-item>
+                            </el-submenu>
+                            <el-menu-item index="manage-members">
+                                <i class="el-icon-mobile-phone"></i>
+                                <span slot="title">人员管理</span>
+                            </el-menu-item>
+                            <el-submenu index="statistics">
+                                <template slot="title">
+                                    <i class="el-icon-sort"></i>
+                                    <span slot="title">考试统计分析</span>
+                                </template>
+                                <el-menu-item index="infos">
+                                    <span slot="title">考试情况汇总</span>
+                                </el-menu-item>
+                                <el-menu-item index="ana">
+                                    <span slot="title">考试情况分析</span>
+                                </el-menu-item>
+                                <el-menu-item index="tops">
+                                    <span slot="title">榜单</span>
+                                </el-menu-item>
+                                <el-menu-item index="charts">
+                                    <span slot="title">走势图</span>
+                                </el-menu-item>
+                            </el-submenu>
+                            <el-menu-item index="manage-exams">
+                                <i class="el-icon-edit-outline"></i>
+                                <span slot="title">考试管理</span>
+                            </el-menu-item>
+                        </el-menu>
+                    </el-aside>
+                    <el-main>
+                        <component :is="currentMain">
+                        </component>
+                    </el-main>
+                </el-container>
+                <el-footer class="admin_banner" height="20px" style="padding: 0px; background-image: url(./static/admin_footer_banner.png); background-size: 100% 100%; background-repeat: no-repeat">
+                    <span style="font-size: 15px">南仓站&copy;2018</span>
+                </el-footer>
+            </el-container>
+        </div>
+    </body>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/jquery.webui-popover/1.2.1/jquery.webui-popover.min.css">
+    <script src="./static/js/vue-requests.js" type="text/javascript"></script>
+    <script src="./static/js/utils.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/jquery.webui-popover/1.2.1/jquery.webui-popover.min.js"></script>
+    <script>
+        function resizeMemberTableFrame() {
+            if(!$("#member_table") || !$("main.el-main"))
+                return;
+
+            $("#member_table").attr("height", ($("main.el-main").height() - 60) + "px");
+        }
+        $("#member_table").attr("height", ($("main.el-main").height() - 60) + "px");
+        window.onresize = resizeMemberTableFrame;
+
+        var Charts = {
+            template: `
+                <div id="chart-container" style="width: 800px; height: 600px">HIGHCHARTS</div>
+            `
+        };
+        var Tops = {
+            /*methods: {
+                onTopsDateRangeChanged: function(event) {
+                    this.$emit("update:tops_date_range", this.m_tdr);
+                }
+            },*/
+            data: function() {
+                return {
+                    tops_date_range: "d",
+                    tops_workshop: "",
+                    tops_worktype: "",
+                    tops_workshop_options: [],
+                    tops_worktype_options: [],
+                };
+            },
+            methods: {
+                onLookupList: function(event) {
+                    function isInArray(item, arr) {
+                        var isin = false;
+                        for(var i in arr) {
+                            if(item == arr[i]) {
+                                isin = true;
+                                break;
+                            }
+                        }
+                        return isin;
+                    }
+                    function sortObject(obj) {
+                        var tmpArr = [];
+
+                        for(var i in obj)
+                            tmpArr.push(i);
+
+                        tmpArr.sort().reverse();
+                        return tmpArr;
+                    }
+                    if(!this.tops_workshop || !this.tops_worktype) {
+                        alert("请选择车间和工种。");
+                        return;
+                    }
+                    if(!isInArray(this.tops_date_range, ["d", "w", "m", "q", "y"])) {
+                        alert("榜单选择错误。");
+                        return;
+                    }
+                    v_requests(this, "getTopsList", function(result){
+                        var list_obj = {};
+                        result.json().then(ret => {
+                            var tbCountList = document.getElementById("count_tops");
+                            if(!tbCountList) {
+                                alert("表格不存在。");
+                                return;
+                            }
+                            for(var index in ret) {
+                                if(Object.getOwnPropertyNames(list_obj).length + 1 > 10)
+                                    break;
+
+                                var list_obj_key = ret[index]["count"] + "";
+                                if(!list_obj[list_obj_key]) {
+                                    var newArr = new Array();
+                                    newArr.push(ret[index]["name"]);
+                                    list_obj[list_obj_key] = newArr;
+                                } else
+                                    list_obj[list_obj_key].splice(0, 0, ret[index]["name"]);
+                            }
+                            var keyArr = sortObject(list_obj);
+                            for(var index = 0; index < keyArr.length; index++) {
+                                var row_index = index + 2;
+                                var curRow = tbCountList.rows[row_index];
+                                if(!curRow) {
+                                    curRow = tbCountList.insertRow(row_index);
+                                    curRow.className = "tops_rows";
+                                }
+                                if(!curRow.cells || curRow.cells.length < 3) {
+                                    for(var i = curRow.cells.length; i < 3; i++)
+                                        curRow.insertCell(i);
+                                    curRow.cells[1].style.fontSize = "20px";
+                                }
+
+                                for(var j = 0; j < 3; j++) {
+                                    var curCell = curRow.cells[j];
+                                    switch(j) {
+                                        case 0:
+                                            if(!getInnerText(curCell) && !curCell.innerHTML)
+                                                setInnerText(curCell, index + 1);
+                                            break;
+                                        case 1:
+                                            if(list_obj[keyArr[index]].length <= 1)
+                                                setInnerText(curCell, list_obj[keyArr[index]][0]);
+                                            else {
+                                                curCell.innerHTML = "<span id='tops_count_" + index + "'>" + list_obj[keyArr[index]][0] + "<span style='font-size: 16px; color: black'>（等" + list_obj[keyArr[index]].length + "人）</span></span>";
+                                                $("#tops_count_" + index).webuiPopover({
+                                                    title: "并列第" + (index + 1) + "名",
+                                                    content: list_obj[keyArr[index]].join("，")
+                                                });
+                                            }
+                                            break;
+                                        case 2:
+                                            setInnerText(curCell, keyArr[index]);
+                                            break;
+                                    }
+                                }
+                            }
+                        }).catch(err => {
+                            alert(err);
+                        });
+                    }, function(err){
+                        alert(err);
+                    }, {
+                        date_range: this.tops_date_range,
+                        workshop: this.tops_workshop,
+                        worktype: this.tops_worktype,
+                        all: "no"
+                    });
+                }
+            },
+            mounted: function() {
+                var that = this;
+                function getTopsComboData(c) {
+                    v_requests(that, "getTopsComboData", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.data) {
+                                eval("that.tops_" + c + "_options = obj.data");
+                            }
+                        }).catch(err => {
+                            alert(err);
+                        });
+                    }, function(err) {
+                        alert(err);
+                    }, { combo: c });
+                }
+                getTopsComboData("workshop");
+                getTopsComboData("worktype");
+            },
+            template: `
+                <table id="toplists" style="width: 100%; height: 100%; margin: 0px;padding: 0px; border-width: 0px; border-collapse: collapse">
+                    <tr>
+                        <td class="tops_frame_cells">
+                            <el-radio-group size="mini" v-model="tops_date_range" style="margin-right: 25px">
+                                <el-radio-button label="d">日榜</el-radio-button>
+                                <el-radio-button label="w">周榜</el-radio-button>
+                                <el-radio-button label="m">月榜</el-radio-button>
+                                <el-radio-button label="q">季榜</el-radio-button>
+                                <el-radio-button label="y">年榜</el-radio-button>
+                            </el-radio-group>
+                            车间：<el-select size="mini" v-model="tops_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
+                                <el-option
+                                    v-for="item in tops_workshop_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                ></el-option>
+                            </el-select>
+                            工种：<el-select size="mini" v-model="tops_worktype" placeholder="请选择工种" style="margin-right: 25px; width: 110px">
+                                <el-option
+                                    v-for="item in tops_worktype_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                ></el-option>
+                            </el-select>
+                            <el-button round icon="el-icon-search" size="mini" type="primary" @click="onLookupList">看榜</el-button>
+                        </td>
+                    </tr>
+                    <tr style="display: flex; flex-direction: row; justify-content: center">
+                        <td class="tops_frame_cells">
+                            <table id="count_tops" class="tops_frame" >
+                                <tr style="height: 58px"><td style="text-align: center; vertical-align: top; font-size: 28px" colspan="3">练习次数榜</td></tr>
+                                <tr class="tops_rows">
+                                    <td>&nbsp;</td><td style="width: 300px">姓名</td><td>次数</td>
+                                </tr>
+                                <tr class="tops_rows">
+                                    <td><img src="./static/zhuangyuan.png" style="width: 25px; height: 47px"></td>
+                                    <td style="font-size: 30px; color: red; text-shadow: 0.1em 0.1em 0.2em red">王致和</td>
+                                    <td>100</td>
+                                </tr>
+                                <tr class="tops_rows">
+                                    <td><img src="./static/bangyan.png" style="width: 25px; height: 47px"></td>
+                                    <td style="font-size: 25px; color: silver; text-shadow: 0.1em 0.1em 0.2em silver">王致和</td>
+                                    <td>100</td>
+                                </tr>
+                                <tr class="tops_rows">
+                                    <td><img src="./static/tanhua.png" style="width: 25px; height: 47px"></td>
+                                    <td style="font-size: 20px; color: brown; text-shadow: 0.1em 0.1em 0.2em brown">王致和</td>
+                                    <td>100</td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td class="tops_frame_cells">
+                            <table id="avg_score_tops" class="tops_frame">
+                                <tr style="height: 58px"><td style="text-align: center; vertical-align: top; font-size: 28px" colspan="3">平均分数榜</td></tr>
+                                <tr class="tops_rows">
+                                    <td>&nbsp;</td><td style="width: 300px">姓名</td><td>平均分数</td>
+                                </tr>
+                                <tr class="tops_rows">
+                                    <td><img src="./static/zhuangyuan.png" style="width: 25px; height: 47px"></td>
+                                    <td style="font-size: 30px; color: red; text-shadow: 0.1em 0.1em 0.2em red">老干妈</td>
+                                    <td>100</td>
+                                </tr>
+                                <tr class="tops_rows">
+                                    <td><img src="./static/bangyan.png" style="width: 25px; height: 47px"></td>
+                                    <td style="font-size: 25px; color: silver; text-shadow: 0.1em 0.1em 0.2em silver">老干妈</td>
+                                    <td>100</td>
+                                </tr>
+                                <tr class="tops_rows">
+                                    <td><img src="./static/tanhua.png" style="width: 25px; height: 47px"></td>
+                                    <td style="font-size: 20px; color: brown; text-shadow: 0.1em 0.1em 0.2em brown">老干妈</td>
+                                    <td>100</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            `
+        };
+        var ManageMember = {
+            data: function() {
+                return {
+                    window_resize_org: window.onresize,
+                    member_table_height: 0,
+                    tableData: [],
+                    member_workshop_options: [],
+                    member_worktype_options: [],
+                    member_position_options: [],
+                    member_workshop: "",
+                    member_worktype: "",
+                    member_position: "",
+                    member_name: "",
+                    member_idcard: "",
+                    member_phone: "",
+                    three_new: false,
+                    mod_dialog_visible: false,
+                    mod_name: "",
+                    mod_phone: "",
+                    mod_idcard: "",
+                    mod_workshop: 0,
+                    mod_worktype: 0,
+                    mod_position: 0,
+                    mod_three_new: false,
+                    mod_deleted: false,
+                    mod_intro: "",
+                    cur_row: {},
+                    loading: false
+                };
+            },
+            mounted: function() {
+                var that = this;
+                this.window_resize_org = window.onresize;
+                window.onresize = function() {
+                    that.member_table_height = $("main.el-main").height() - 60;
+                };
+                function getMemberComboData(c) {
+                    v_requests(that, "getTopsComboData", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.data) {
+                                eval("that.member_" + c + "_options = obj.data");
+                            }
+                            eval("that.member_" + c + "_options.splice(0, 0, { label: '全部', value: '' })");
+                        }).catch(err => {
+                            alert(err);
+                        });
+                    }, function(err) {
+                        alert(err);
+                    }, { combo: c });
+                }
+                getMemberComboData("workshop");
+                getMemberComboData("worktype");
+                getMemberComboData("position");
+            },
+            unmounted: function() {
+                window.onresize = this.window_resize_org;
+            },
+            methods: {
+                onLookupList: function(event) {
+                    var that = this;
+                    if(that.member_table_height == 0)
+                        that.member_table_height = $("main.el-main").height() - 60;
+
+                    that.loading = true;
+                    v_requests(that, "getMembers", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg)
+                                throw obj.errmsg;
+                            if(obj) {
+                                that.tableData = obj;
+                                that.$refs.member_table.$nextTick(function() {
+                                    that.loading = false;
+                                });
+                            }
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.loading = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.loading = false;
+                    }, {
+                        name: that.member_name,
+                        phone: that.member_phone,
+                        workshop: that.member_workshop,
+                        worktype: that.member_worktype,
+                        idcard: that.member_idcard,
+                        postion: that.member_position,
+                        three_new: (that.three_new ? "1" : "0")
+                    });
+                },
+                onSaveModMember: function() {
+                    var that = this;
+                    if(this.mod_name == "" || this.mod_idcard == "") {
+                        alert("姓名和身份证号码不能为空。");
+                        return;
+                    }
+
+                    if(this.mod_name == this.cur_row.name &&
+                        this.mod_phone == this.cur_row.phone &&
+                        this.mod_idcard == this.cur_row.idcard &&
+                        this.mod_workshop == this.cur_row.ws_value &&
+                        this.mod_worktype == this.cur_row.wt_value &&
+                        this.mod_position == this.cur_row.pos_value &&
+                        this.mod_intro == this.cur_row.intro &&
+                        this.mod_three_new == (this.cur_row.three_new == "是") &&
+                        this.mod_deleted == (this.cur_row.deleted == "是")) {
+                        this.mod_dialog_visible = false;
+                        return;
+                    }
+                    v_requests(that, "modMember", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg != "OK")
+                                throw obj.errmsg;
+                            else {
+                                alert("修改成功。");
+                                that.onLookupList();
+                                that.mod_dialog_visible = false;
+                            }
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.mod_dialog_visible = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.mod_dialog_visible = false;
+                    }, {
+                        name: that.mod_name,
+                        phone: that.mod_phone,
+                        workshop: that.mod_workshop,
+                        worktype: that.mod_worktype,
+                        idcard: that.mod_idcard,
+                        position: that.mod_position,
+                        three_new: (that.mod_three_new ? "1" : "0"),
+                        deleted: (that.deleted ? "1" : "0"),
+                        intro: that.mod_intro
+                    });
+                },
+                handleEdit: function(index, row) {
+                    this.cur_row = row;
+                    this.mod_name = row.name;
+                    this.mod_phone = row.phone;
+                    this.mod_idcard = row.idcard;
+                    this.mod_workshop = row.ws_value;
+                    this.mod_worktype = row.wt_value;
+                    this.mod_position = row.pos_value;
+                    this.mod_intro = row.intro;
+                    this.mod_three_new = (row.three_new === '是');
+                    this.mod_delete = (row.deleted === '是');
+                    this.mod_dialog_visible = true;
+                }
+            },
+            template: `
+                <table id="member_frame" style="width: 100%; height: 100%; border-width: 0px; border-collapse: collpase; padding: 0px; margin: 0px">
+                    <tr style="height: 50px">
+                        <td class="tops_frame_cells">
+                            姓名：<el-input :disabled="loading" placeholder="请输入姓名" size="mini" clearable v-model="member_name" style="margin-right: 25px; width: 95px"></el-input>
+                            手机号码：<el-input :disabled="loading" placeholder="请输入手机号码" size="mini" clearable v-model="member_phone" style="margin-right: 25px; width: 120px"></el-input>
+                            身份证号码：<el-input :disabled="loading" placeholder="请输入身份证号码" size="mini" clearable v-model="member_idcard" style="margin-right: 25px; width: 170px"></el-input>                         
+                            车间：<el-select size="mini" :disabled="loading" v-model="member_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
+                                <el-option
+                                    v-for="item in member_workshop_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                ></el-option>
+                            </el-select>
+                            工种：<el-select size="mini" :disabled="loading" v-model="member_worktype" placeholder="请选择工种" style="margin-right: 25px; width: 110px">
+                                <el-option
+                                    v-for="item in member_worktype_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                ></el-option>
+                            </el-select>
+                            职名：<el-select :disabled="loading" size="mini" v-model="member_position" placeholder="请选择职名" style="margin-right: 25px; width: 110px">
+                                <el-option
+                                    v-for="item in member_position_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                ></el-option>
+                            </el-select>
+                            <el-checkbox v-model="three_new" style="margin-right: 10px" :disabled="loading">三新</el-checkbox>
+                            <el-button icon="el-icon-search" size="mini" type="primary" @click="onLookupList" :loading="loading">查找</el-button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td id="member_table_frame" class="tops_frame_cells">
+                            <el-table
+                                ref="member_table"
+                                :data="tableData"
+                                :border="true"
+                                :show-header="true"
+                                :height="member_table_height"
+                                v-loading="loading"
+                                element-loading-text="正在玩了命地加载……"
+                                element-loading-spinner="el-icon-loading"
+                                element-loading-background="rgba(0, 0, 0, 0, 0.8)"
+                            >
+                                <el-table-column
+                                    label="姓名" 
+                                    width="100" 
+                                    prop="name" 
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="车间"
+                                    width="150"
+                                    prop="workshop"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="工种"
+                                    width="150"
+                                    prop="worktype"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="职名"
+                                    width="150"
+                                    prop="position"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="已认证"
+                                    width="80"
+                                    prop="verified"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="已禁用"
+                                    width="80"
+                                    prop="deleted"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="是否三新"
+                                    width="80"
+                                    prop="three_new"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="手机号码"
+                                    width="150"
+                                    prop="phone"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="身份证号码"
+                                    width="180"
+                                    prop="idcard"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="备注"
+                                    prop="intro"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    width="180px"
+                                    label="操作"
+                                >
+                                    <template slot-scope="scope">
+                                        <el-button
+                                            size="mini"
+                                            @click="handleEdit(scope.$index, scope.row)"
+                                        >编辑</el-button>
+                                        <el-button v-if="scope.row.weixin_open_id != '' && scope.row.verified == '否'"
+                                            size="mini"
+                                            type="success"
+                                            @click="handlePass(scope.$index, scope.row)"
+                                        >通过审核</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <el-dialog
+                                :visible.sync="mod_dialog_visible"
+                                title="人员修改"
+                                width="500px"
+                            >
+                                <table>
+                                    <tr>
+                                        <td>姓名：</td>
+                                        <td><el-input v-model="mod_name" size="mini" clearable style="width: 185px"></el-input></td>
+                                        <td>
+                                            车间：<el-select size="mini" v-model="mod_workshop" style="width: 110px">
+                                                <el-option
+                                                    v-for="item in member_workshop_options"
+                                                    v-if="item.value !== ''"
+                                                    :key="item.value"
+                                                    :label="item.label"
+                                                    :value="item.value"
+                                                ></el-option>
+                                            </el-select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            手机号码：
+                                        </td>
+                                        <td>
+                                            <el-input size="mini" clearable v-model="mod_phone" style="margin-right: 25px; width: 185px"></el-input>
+                                        </td>
+                                        <td>
+                                            工种：<el-select size="mini" v-model="mod_worktype" style="width: 110px">
+                                                <el-option
+                                                    v-for="item in member_worktype_options"
+                                                    v-if="item.value !== ''"
+                                                    :key="item.value"
+                                                    :label="item.label"
+                                                    :value="item.value"
+                                                ></el-option>
+                                            </el-select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            身份证号码：
+                                        </td>
+                                        <td>
+                                            <el-input size="mini" clearable v-model="mod_idcard" style="width: 185px"></el-input>                         
+                                        </td>
+                                        职名：<el-select size="mini" v-model="mod_position" style="width: 110px">
+                                            <el-option
+                                                v-for="item in member_position_options"
+                                                v-if="item.value != ''"
+                                                :key="item.value"
+                                                :label="item.label"
+                                                :value="item.value"
+                                            ></el-option>
+                                        </el-select>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="99">
+                                            <el-checkbox v-model="mod_three_new" style="margin-right: 10px">三新</el-checkbox>
+                                            <el-checkbox v-model="mod_deleted">禁用</el-checkbox>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="99">备注：</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="99">
+                                            <el-input type="textarea" v-model="mod_intro" rows="3" resize="none"></el-input>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <span slot="footer">
+                                    <el-button type="primary" size="mini" @click="onSaveModMember">保存</el-button>
+                                    <el-button size="mini" @click="mod_dialog_visible = false">取消</el-button>
+                                </span>
+                            </el-dialog>
+                        </td>
+                    </tr>
+                </table>
+            `
+        };
+        var Infos = {
+            data: function() {
+                return {
+                    tableData: [],
+                    paper_date_range: [],
+                    info_workshop: "",
+                    info_worktype: "",
+                    info_workshop_options: [],
+                    info_worktype_options: [],
+                    dialog_workshop: "",
+                    dialog_name: "",
+                    dialog_paper_id: "",
+                    missedDialogVisible: false,
+                    missedData: [],
+                    failedDialogVisible: false,
+                    failedData: [],
+                    scoreDialogVisible: false,
+                    scoreData: [],
+                    score_list_title: "",
+                    dialogHeight: 0,
+                    window_resize_org: undefined,
+                    dialog_d_value: 150,
+                    expandedRowsReal: (new Set())
+                };
+            },
+            methods: {
+                onExpandChange: function(row, expandedRows) {
+                    if(expandedRows) {
+                        expandedRows.forEach(curRow => {
+                            if(row.rowId != curRow.rowId && this.expandedRowsReal.has(curRow.rowId))
+                                this.$refs.info_table.toggleRowExpansion(curRow, false);
+                        });
+                    }
+                    if(this.expandedRowsReal.has(row.rowId))
+                        this.expandedRowsReal.delete(row.rowId);
+                    else
+                        this.expandedRowsReal.add(row.rowId);
+                },
+                onLookupList: function(event) {
+                    var that = this;
+                    v_requests(this, "getInfoTreeTop", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg)
+                                throw obj.errmsg;
+                            else{
+                                var data = [];
+                                for(var i in obj) {
+                                    var avg_score_str = (parseFloat(obj[i]["score_sum"]) / parseInt(obj[i]["examinee_count"])) + "";
+                                    var avg_score_s_str = avg_score_str.substring(0, (avg_score_str.indexOf(".") === -1 ? avg_score_str.length : avg_score_str.indexOf(".")));
+                                    data.push({
+                                        "paper_name": obj[i]["paper_name"],
+                                        "rowId": obj[i]["paper_id"], 
+                                        "examinee_count": obj[i]["examinee_count"],
+                                        "avg_score": avg_score_s_str,
+                                        "should_mem_count": obj[i]["should_mem_count"],
+                                        "examinee_count": obj[i]["examinee_count"],
+                                        "failed_count": obj[i]["failed_count"],
+                                        "missed": parseInt(obj[i]["should_mem_count"]) - parseInt(obj[i]["examinee_count"])
+                                    });
+                                }
+                                that.tableData = data;
+                                console.log(JSON.stringify(that.tableData));
+                            }
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        "date_start": (that.paper_date_range.length == 2 ? that.paper_date_range[0] : ""),
+                        "date_end": (that.paper_date_range.length == 2 ? that.paper_date_range[1] : ""),
+                        "workshop": that.info_workshop,
+                        "worktype": that.info_worktype
+                    });
+                },
+                onMissedClicked: function(curRow) {
+                    var that = this;
+                    v_requests(this, "getMissedDetail", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) {
+                                alert(obj.errmsg);
+                                return;
+                            }
+                            that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
+                            that.dialog_workshop = "";
+                            that.dialog_name = "";
+                            that.missedData = obj;
+                            that.missedDialogVisible = true;
+                            that.dialog_paper_id = curRow.rowId;
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { "paper_id": curRow.rowId });
+                },
+                onFailedClicked: function(curRow) {
+                    var that = this;
+                    v_requests(this, "getFailedDetail", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) {
+                                alert(obj.errmsg);
+                                return;
+                            }
+                            that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
+                            that.dialog_workshop = "";
+                            that.dialog_name = "";
+                            that.failedData = obj;
+                            that.failedDialogVisible = true;
+                            that.dialog_paper_id = curRow.rowId;
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { "paper_id": curRow.rowId });
+                },
+                onScoreList: function(curRow) {
+                    var that = this;
+                    v_requests(this, "getScoreDetail", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) {
+                                alert(obj.errmsg);
+                                return;
+                            }
+                            that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
+                            that.dialog_workshop = "";
+                            that.dialog_name = "";
+                            that.scoreData = obj.list;
+                            that.scoreDialogVisible = true;
+                            that.dialog_paper_id = curRow.rowId;
+                            that.score_list_title = "全体人员的《" + curRow.paper_name + "》成绩单";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { "paper_id": curRow.rowId });
+                },
+                onMissedLookupList: function(event) {
+                    var that = this;
+                    v_requests(this, "getMissedDetail", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) {
+                                alert(obj.errmsg);
+                                return;
+                            }
+                            that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
+                            that.missedData = obj;
+                            that.missedDialogVisible = true;
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { "paper_id": that.dialog_paper_id, "name": that.dialog_name, "ws": that.dialog_workshop });
+                },
+                onFailedLookupList: function(event) {
+                    var that = this;
+                    v_requests(this, "getFailedDetail", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) {
+                                alert(obj.errmsg);
+                                return;
+                            }
+                            that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
+                            that.failedData = obj;
+                            that.failedDialogVisible = true;
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { "paper_id": that.dialog_paper_id, "name": that.dialog_name, "ws": that.dialog_workshop });
+                },
+                onScoreLookupList: function(event) {
+                    var that = this;
+                    v_requests(this, "getScoreDetail", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) {
+                                alert(obj.errmsg);
+                                return;
+                            }
+                            that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
+                            if(obj.workshop_name)
+                                that.score_list_title = obj.workshop_name + that.dialog_name + "《" + obj.paper_name + "》成绩单";
+                            else
+                                that.score_list_title = ($.trim(that.dialog_name) == "" ? "全体成员" : that.dialog_name) + "《" + obj.paper_name + "》成绩单";
+                            that.scoreData = obj.list;
+                            that.scoreDialogVisible = true;
+
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { "paper_id": that.dialog_paper_id, "name": that.dialog_name, "ws": that.dialog_workshop });
+                },
+                onScoreListExport: function(event) {
+                    var wb = XLSX.utils.table_to_book(document.querySelector("#score_list"));
+                    var wbout = XLSX.write(wb, { bookType: "xlsx", bookSST: true, type: "array" });
+                    try {
+                        saveAs(new Blob([wbout], { type: "application/octet-stream" }), this.score_list_title + ".xlsx");
+                    }
+                    catch(e) {
+                        alert(e, wbout);
+                    }
+                }
+            },
+            computed: {
+                dialogTableHeight: function() {
+                    return this.dialogHeight - 100;
+                }
+            },
+            mounted: function() {
+                var that = this;
+                /*window.onresize = function() {
+                    that.member_table_height = $("main.el-main").height() - 60;
+                };*/
+                this.window_resize_org = window.onresize;
+                window.onresize = function() {
+                    that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
+                };
+                function getInfoComboData(c) {
+                    v_requests(that, "getTopsComboData", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.data) {
+                                eval("that.info_" + c + "_options = obj.data");
+                            }
+                            eval("that.info_" + c + "_options.splice(0, 0, { label: '全部', value: '' })");
+                        }).catch(err => {
+                            alert(err);
+                        });
+                    }, function(err) {
+                        alert(err);
+                    }, { combo: c });
+                }
+                getInfoComboData("workshop");
+                getInfoComboData("worktype");
+            },
+            template: `
+                <table id="info_frame" style="width: 100%; height: 100%; border-width: 0px; border-collapse: collpase; padding: 0px; margin: 0px">
+                    <tr style="height: 50px">
+                        <td class="tops_frame_cells">
+                            出题时间：<el-date-picker
+                                v-model="paper_date_range"
+                                type="daterange"
+                                start-placeholder="起时间"
+                                end-placeholder="止时间"
+                                :default-time="['00:00:00', '23:59:59']"
+                                format="yyyy 年 MM 月 dd 日"
+                                value-format="yyyy-MM-dd"
+                                size="mini"
+                                style="margin-right: 25px"
+                            >
+                            </el-date-picker>
+                            车间：<el-select size="mini" v-model="info_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
+                                <el-option
+                                    v-for="item in info_workshop_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                ></el-option>
+                            </el-select>
+                            工种：<el-select size="mini" v-model="info_worktype" placeholder="请选择工种" style="margin-right: 25px; width: 110px">
+                                <el-option
+                                    v-for="item in info_worktype_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                ></el-option>
+                            </el-select>
+                            <el-button round icon="el-icon-search" size="mini" type="primary" @click="onLookupList">查找</el-button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td id="info_table_frame" class="tops_frame_cells">
+                            <el-table
+                                :data="tableData"
+                                :border="true"
+                                :show-header="true"
+                                stripe
+                            >
+                                <el-table-column
+                                    label="考试名称"
+                                    :fixed="true"
+                                    prop="paper_name"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="应考人数"
+                                    width="100"
+                                    prop="should_mem_count"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="参考人数"
+                                    width="100"
+                                    prop="examinee_count"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    label="缺考人数"
+                                    width="100"
+                                >
+                                    <template slot-scope="scope">
+                                        <el-button
+                                            type="text"
+                                            size="medium"
+                                            @click="onMissedClicked(scope.row)"
+                                        >
+                                            {% verbatim %}
+                                            {{ scope.row.missed }}
+                                            {% endverbatim %}
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column
+                                    label="不及格人数"
+                                    width="100"
+                                >
+                                    <template slot-scope="scope">
+                                        <el-button
+                                            type="text"
+                                            size="medium"
+                                            @click="onFailedClicked(scope.row)"
+                                        >
+                                            {% verbatim %}
+                                            {{ scope.row.failed_count }}
+                                            {% endverbatim %}
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column
+                                    label="平均分数"
+                                    width="80"
+                                    prop="avg_score"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    width="100"
+                                >
+                                    <template slot-scope="scope">
+                                        <el-button
+                                            type="primary"
+                                            size="mini"
+                                            @click="onScoreList(scope.row)"
+                                        >
+                                            成绩单
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <el-dialog
+                                :visible.sync="missedDialogVisible"
+                                :height="dialogHeight"
+                                width="50%"
+                                title="缺考人员名单"
+                            >
+                                <table>
+                                    <tr>
+                                        <td>
+                                            姓名：<el-input
+                                                    v-model="dialog_name"
+                                                    size="mini"
+                                                    placeholder="请输入姓名"
+                                                    style="margin-right: 25px; width: 100px"
+                                                  >
+                                                  </el-input>
+                                            车间：<el-select size="mini" v-model="dialog_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
+                                                <el-option
+                                                    v-for="item in info_workshop_options"
+                                                    :key="item.value"
+                                                    :label="item.label"
+                                                    :value="item.value"
+                                                ></el-option>
+                                            </el-select>
+                                            <el-button round icon="el-icon-search" size="mini" type="primary" @click="onMissedLookupList">查找</el-button>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <el-table
+                                    :data="missedData"
+                                    :border="true"
+                                    :show-header="true"
+                                    :height="dialogTableHeight"
+                                    :default-sort="{ prop: 'name', order: 'ascending' }"
+                                    stripe
+                                >
+                                    <el-table-column
+                                        prop="name"
+                                        label="姓名"
+                                        sortable
+                                    >
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="dep_name"
+                                        label="所属车间"
+                                        sortable
+                                    >
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="type_name"
+                                        label="工种"
+                                    >
+                                    </el-table-column>
+                                </el-table>
+                            </el-dialog>
+                            <el-dialog
+                                :visible.sync="failedDialogVisible"
+                                :height="dialogHeight"
+                                width="50%"
+                                title="不及格人员名单"
+                            >
+                                <table>
+                                    <tr>
+                                        <td>
+                                            姓名：<el-input
+                                                    v-model="dialog_name"
+                                                    size="mini"
+                                                    placeholder="请输入姓名"
+                                                    style="margin-right: 25px; width: 100px"
+                                                  >
+                                                  </el-input>
+                                            车间：<el-select size="mini" v-model="dialog_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
+                                                <el-option
+                                                    v-for="item in info_workshop_options"
+                                                    :key="item.value"
+                                                    :label="item.label"
+                                                    :value="item.value"
+                                                ></el-option>
+                                            </el-select>
+                                            <el-button round icon="el-icon-search" size="mini" type="primary" @click="onFailedLookupList">查找</el-button>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <el-table
+                                    :data="failedData"
+                                    :border="true"
+                                    :show-header="true"
+                                    :height="dialogTableHeight"
+                                    :default-sort="{ prop: 'name', order: 'ascending' }"
+                                    stripe
+                                >
+                                    <el-table-column
+                                        prop="name"
+                                        label="姓名"
+                                        sortable
+                                    >
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="dep_name"
+                                        label="所属车间"
+                                        sortable
+                                    >
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="type_name"
+                                        label="工种"
+                                    >
+                                    </el-table-column>
+                                </el-table>
+                            </el-dialog>
+                            <el-dialog
+                                :visible.sync="scoreDialogVisible"
+                                :height="dialogHeight"
+                                width="50%"
+                                title="成绩单"
+                            >
+                                <table>
+                                    <tr>
+                                        <td>
+                                            姓名：<el-input
+                                                    v-model="dialog_name"
+                                                    size="mini"
+                                                    placeholder="请输入姓名"
+                                                    style="margin-right: 25px; width: 100px"
+                                                  >
+                                                  </el-input>
+                                            车间：<el-select size="mini" v-model="dialog_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
+                                                <el-option
+                                                    v-for="item in info_workshop_options"
+                                                    :key="item.value"
+                                                    :label="item.label"
+                                                    :value="item.value"
+                                                ></el-option>
+                                            </el-select>
+                                            <el-button round icon="el-icon-search" size="mini" type="primary" @click="onScoreLookupList">查找</el-button>
+                                            <el-button round icon="el-icon-download" size="mini" type="primary" @click="onScoreListExport">导出</el-button>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <el-table
+                                    :data="scoreData"
+                                    :border="true"
+                                    :show-header="true"
+                                    :height="dialogTableHeight"
+                                    :default-sort="{ prop: 'score', order: 'ascending' }"
+                                    stripe
+                                    id="score_list"
+                                >
+                                    <el-table-column :label="score_list_title">
+                                        <el-table-column
+                                            prop="name"
+                                            label="姓名"
+                                            sortable
+                                        >
+                                        </el-table-column>
+                                        <el-table-column
+                                            prop="dep_name"
+                                            label="所属车间"
+                                            sortable
+                                        >
+                                        </el-table-column>
+                                        <el-table-column
+                                            prop="type_name"
+                                            label="工种"
+                                        >
+                                        </el-table-column>
+                                        <el-table-column
+                                            prop="score"
+                                            label="得分"
+                                            sortable
+                                        >
+                                        </el-table-column>
+                                    </el-table-column>
+                                </el-table>
+                            </el-dialog>
+                        </td>
+                    </tr>
+                </table>
+            `
+        };
+        var ManageExams = {
+            data: function() {
+                return {
+                    paper_type: 0,
+                    paper_type_options: [],
+                    papers: [],
+                    selected_papers: [],
+                    worktypes: [],
+                    selected_worktypes: [],
+                    worktypes_allow_change: true,
+                    workshops:[],
+                    selected_workshops: [],
+                    workshops_allow_change: true,
+                    positions: [],
+                    selected_positions: [],
+                    positions_allow_change: true,
+                    members: [],
+                    selected_members: [],
+                    passing_score: 60,
+                    test_name: "",
+                    test_time: 30,
+                    test_ss_count: 15,
+                    test_ms_count: 15,
+                    test_jm_count:15,
+                    three_new: false
+                };
+            },
+            methods: {
+                onPaperTypeChange: function(val) {
+                    var that = this;
+                    this.selected_papers.splice(0, this.selected_papers.length);
+                    v_requests(that, "getPapersByTypeAdmin", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj) {
+                                that.papers = obj;
+                            }
+                        }).catch(err => {
+                            alert(err);
+                        });
+                    }, function(err) {
+                        alert(err);
+                    }, { type_id: val});
+                },
+                onPaperSelected: function(val) {
+                    this.selected_papers.splice(0, this.selected_papers.length);
+                    for(var i in val)
+                        this.selected_papers.push(val[i].key);
+                },
+                onWorkTypeSelected: function(val) {
+                    if(!this.worktypes_allow_change)
+                        return;
+
+                    this.selected_worktypes.splice(0, this.selected_worktypes.length);
+                    for(var i in val)
+                        this.selected_worktypes.push(val[i].value);
+                    this.selectMembers();
+                },
+                onWorkShopSelected: function(val) {
+                    if(!this.workshops_allow_change)
+                        return;
+
+                    this.selected_workshops.splice(0, this.selected_workshops.length);
+                    for(var i in val)
+                        this.selected_workshops.push(val[i].value);
+                    this.selectMembers();
+                },
+                onPositionSelected: function(val) {
+                    if(!this.positions_allow_change)
+                        return;
+
+                    this.selected_positions.splice(0, this.selected_positions.length);
+                    for(var i in val)
+                        this.selected_positions.push(val[i].value);
+                    this.selectMembers();
+                },
+                onMemberSelectionChanged: function(val) {
+                    this.selected_members.splice(0, this.selected_members.length);
+
+                    for(var i in val)
+                        this.selected_members.push(val[i].weixin_open_id);
+                },
+                onMemberSelected: function(selection, row) {
+                    var that = this;
+                    this.$refs.members_table.$nextTick(function() {
+                        if(that.selected_members.length !== that.members.length) {
+                            that.workshops_allow_change = false;
+                            that.workshops.forEach(row => {
+                                that.$refs.table_workshops.toggleRowSelection(row, false);
+                                that.$refs.table_workshops.$nextTick(function() {
+                                    that.workshops_allow_change = true;
+                                });
+                            });
+                            that.worktypes_allow_change = false;
+                            that.worktypes.forEach(row => {
+                                that.$refs.table_worktypes.toggleRowSelection(row, false);
+                                that.$refs.table_worktypes.$nextTick(function() {
+                                    that.worktypes_allow_change = true;
+                                });
+                            });
+                            that.positions_allow_change = false;
+                            that.positions.forEach(row => {
+                                that.$refs.table_positions.toggleRowSelection(row, false);
+                                that.$refs.table_positions.$nextTick(function() {
+                                    that.positions_allow_change = true;
+                                });
+                            });
+                            this.selected_worktypes.splice(0, this.selected_worktypes.length);
+                            this.selected_workshops.splice(0, this.selected_workshops.length);
+                            this.selected_positions.splice(0, this.selected_positions.length);
+                        }
+                    });
+                },
+                onThreeNewChanged: function(val) {
+                    this.selectMembers();
+                },
+                selectMembers: function() {
+                    var that = this;
+                    if(this.selected_workshops.length === 0 && this.selected_worktypes.length === 0 && this.selected_positions.length === 0) {
+                        this.members.splice(0, this.members.length);
+                        return;
+                    }
+
+                    v_requests(that, "getExamMembers", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj) {
+                                that.members = obj;
+                                that.$refs.members_table.$nextTick(function() {
+                                    that.members.forEach(row => {
+                                        that.$refs.members_table.toggleRowSelection(row, true);
+                                    });
+                                });
+                            }
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { workshop: that.selected_workshops.join(), worktype: that.selected_worktypes.join(), position: that.selected_positions.join(), three_new: (that.three_new ? "1" : "0") });
+                },
+                onCommit: function() {
+                    if(!this.test_name ||
+                        !this.test_time ||
+                        !this.test_ss_count ||
+                        !this.test_ms_count ||
+                        !this.test_jm_count) {
+                        alert("请将考试属性填写完整。");
+                        return;
+                    }
+                    if(this.selected_papers.lenght <= 0) {
+                        alert("请选择题库");
+                        return;
+                    }
+                    if(this.selected_members.length <= 0){
+                        alert("请选择参考人员。");
+                        return;
+                    }
+                    document.getElementById("members_group").disabled = "disabled";
+                    document.getElementById("properties_group").disabled = "disabled";
+                    
+                    var that = this;
+                    v_requests(that, "createExams", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) {
+                                if(obj.errmsg !== "OK")
+                                    throw obj.errmsg;
+                                else{
+                                    document.getElementById("members_group").disabled = "false";
+                                    document.getElementById("properties_group").disabled = "false";
+                                    alert("出题完成。");
+                                }
+                            }
+                        }).catch(err => {
+                            document.getElementById("members_group").disabled = "false";
+                            document.getElementById("properties_group").disabled = "false";
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        document.getElementById("members_group").disabled = "false";
+                        document.getElementById("properties_group").disabled = "false";
+                        alert(JSON.stringify(err));
+                    }, { 
+                        workshops: that.selected_workshops.join(),
+                        worktypes: that.selected_worktypes.join(),
+                        positions: that.selected_positions.join(),
+                        members: (that.selected_workshops.length === 0 && that.selected_worktypes.length === 0 && that.selected_positions.length === 0 ? that.selected_members.join() : ''),
+                        paper_ids: that.selected_papers.join(),
+                        passing_score: that.passing_score,
+                        test_time: that.test_time * 60 * 1000,
+                        test_name: that.test_name,
+                        test_ss_count: that.test_ss_count,
+                        test_ms_count: that.test_ms_count,
+                        test_jm_count: that.test_jm_count
+                    });
+                }
+            },
+            mounted: function() {
+                var that = this;
+                v_requests(that, "getPaperTypeOptions", function(result) {
+                    result.json().then(obj => {
+                        if(obj.errmsg) 
+                            throw obj.errmsg;
+                        if(obj) {
+                            that.paper_type_options = obj;
+                            if(obj.length > 0) {
+                                that.paper_type = obj[0].value;
+                                that.onPaperTypeChange(obj[0].value);
+                            }
+                        }
+                    }).catch(err => {
+                        alert(JSON.stringify(err));
+                    });
+                }, function(err) {
+                    alert(JSON.stringify(err));
+                }, {});
+                v_requests(that, "getTopsComboData", function(result) {
+                    result.json().then(obj => {
+                        if(obj.errmsg) 
+                            throw obj.errmsg;
+                        if(obj.data) {
+                            that.workshops = obj.data;
+                        }
+                    }).catch(err => {
+                        alert(JSON.stringify(err));
+                    });
+                }, function(err) {
+                    alert(JSON.stringify(err));
+                }, { combo: "workshop" });
+                v_requests(that, "getTopsComboData", function(result) {
+                    result.json().then(obj => {
+                        if(obj.errmsg) 
+                            throw obj.errmsg;
+                        if(obj.data) {
+                            that.worktypes = obj.data;
+                        }
+                    }).catch(err => {
+                        alert(JSON.stringify(err));
+                    });
+                }, function(err) {
+                    alert(JSON.stringify(err));
+                }, { combo: "worktype" });
+                v_requests(that, "getTopsComboData", function(result) {
+                    result.json().then(obj => {
+                        if(obj.errmsg) 
+                            throw obj.errmsg;
+                        if(obj.data) {
+                            that.positions = obj.data;
+                        }
+                    }).catch(err => {
+                        alert(JSON.stringify(err));
+                    });
+                }, function(err) {
+                    alert(JSON.stringify(err));
+                }, { combo: "position" });
+            },
+            template: `
+                <table style="border-width: 0; width: 100%; height: 100%; border-collapse: collapse; padding: 0; margin: 0">
+                    <tr>
+                        <td style="display: flex; flex-direction: row; justify-content: center">
+                            <fieldset id="properties_group" style="border-radius: 25px; width: 100%; display: flex; flex-direction: row; justify-content: center">
+                                <legend>设置试卷属性</legend>
+                                试卷名称：<el-input v-model="test_name" placeholder="在此输入试卷名称" size="mini" style="width: 200px"></el-input>
+                                考试时间：<el-input-number v-model="test_time" :max="180" :min="1" size="mini" style="width: 120px"></el-input-number>分钟&nbsp;&nbsp;&nbsp;&nbsp;
+                                及格分数：<el-input-number v-model="passing_score" :max="100" :min="0" size="mini" style="width: 120px"></el-input-number>&nbsp;&nbsp;&nbsp;&nbsp;
+                                单选题：<el-input-number v-model="test_ss_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
+                                多选题：<el-input-number v-model="test_ms_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
+                                判断题：<el-input-number v-model="test_jm_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
+                            </fieldset>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="display: flex; flex-direction: row; justify-content: center">
+                            <fieldset id="members_group" style="border-radius: 25px; width: 100%">
+                                <legend>设置考试范围及参考人员范围</legend>
+                                <table id="info_frame" style="height: 100%; border-width: 0px; border-collapse: collpase; padding: 0px; margin: 0px">
+                                    <tr>
+                                        <td style="display: flex; flex-direction: row; justify-content: center">
+                                            <div>
+                                                请选择题库名称：<el-select size="mini" v-model="paper_type" style="margin-right: 25px; width: 220px" @change="onPaperTypeChange">
+                                                    <el-option
+                                                        v-for="item in paper_type_options"
+                                                        :key="item.value"
+                                                        :label="item.label"
+                                                        :value="item.value"        
+                                                    ></el-option>
+                                                </el-select><br />
+                                                <el-table
+                                                    :data="papers"
+                                                    border
+                                                    height="500px"
+                                                    style="width: 342px"
+                                                    @selection-change="onPaperSelected"
+                                                >
+                                                    <el-table-column type="selection" width="40px">
+                                                    </el-table-column>
+                                                    <el-table-column prop="label" width="300px" label="题库列表">
+                                                    </el-table-column>
+                                                </el-table>
+                                            </div>
+                                            <div style="display: flex; flex-direction: column; margin-right: 40px">
+                                                <span style="margin: 5px 0 5px 0">选择车间：</span>
+                                                <el-table
+                                                    :data="workshops"
+                                                    height="500px"
+                                                    style="width: 192px"
+                                                    border
+                                                    @selection-change="onWorkShopSelected"
+                                                    ref="table_workshops"
+                                                >
+                                                    <el-table-column type="selection" width="40px">
+                                                    </el-table-column>
+                                                    <el-table-column prop="label" label="车间列表" width="150px">
+                                                    </el-table-column>
+                                                </el-table>
+                                            </div>
+                                            <div style="display: flex; flex-direction: column; margin-right: 40px">
+                                                <span style="margin: 5px 0 5px 0">选择工种：</span>
+                                                <el-table
+                                                    :data="worktypes"
+                                                    height="500px"
+                                                    style="width: 192px"
+                                                    border
+                                                    @selection-change="onWorkTypeSelected"
+                                                    ref="table_worktypes"
+                                                >
+                                                    <el-table-column type="selection" width="40px">
+                                                    </el-table-column>
+                                                    <el-table-column prop="label" label="工种列表" width="150px">
+                                                    </el-table-column>
+                                                </el-table>
+                                            </div>
+                                            <div style="display: flex; flex-direction: column; margin-right: 40px">
+                                                <span style="margin: 5px 0 5px 0">选择职名：</span>
+                                                <el-table
+                                                    :data="positions"
+                                                    height="500px"
+                                                    style="width: 242px"
+                                                    border
+                                                    @selection-change="onPositionSelected"
+                                                    ref="table_positions"
+                                                >
+                                                    <el-table-column type="selection" width="40px">
+                                                    </el-table-column>
+                                                    <el-table-column prop="label" label="职名列表" width="200px">
+                                                    </el-table-column>
+                                                </el-table>
+                                            </div>
+                                            <div style="display: flex; flex-direction: column">
+                                                <div style="display: flex; flex-direction: row; justify-content: flex-start; align-items: center; margin: 0; padding: 0">
+                                                    <span style="margin: 5px 0 5px 0">参考人员：</span>
+                                                    <el-checkbox v-model="three_new" @change="onThreeNewChanged">三新人员</el-checkbox>
+                                                </div>
+                                                <el-table
+                                                    :data="members"
+                                                    height="500px"
+                                                    width="490px"
+                                                    @selection-change="onMemberSelectionChanged"
+                                                    @select="onMemberSelected"
+                                                    ref="members_table"
+                                                >
+                                                    <el-table-column type="selection" width="40px">
+                                                    </el-table-column>
+                                                    <el-table-column
+                                                        label="姓名"
+                                                        width="100px"
+                                                        prop="name"
+                                                    >
+                                                    </el-table-column>
+                                                    <el-table-column
+                                                        label="车间"
+                                                        width="150px"
+                                                        prop="workshop"
+                                                    >
+                                                    </el-table-column>
+                                                    <el-table-column
+                                                        label="工种"
+                                                        width="120px"
+                                                        prop="worktype"
+                                                    >
+                                                    </el-table-column>
+                                                    <el-table-column
+                                                        label="职名"
+                                                        width="120px"
+                                                        prop="position"
+                                                    >
+                                                    </el-table-column>
+                                                </el-table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </fieldset>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="display: flex; flex-direction: row; justify-content: center">
+                            <el-button type="primary" @click="onCommit">发布考试</el-button>
+                        </td>
+                    </tr>
+                </table>
+            `
+        };
+        var QBImport = {
+            data: function() {
+                return {
+                    paper_type: 0,
+                    paper_type_org: 0,
+                    paper_type_options: [],
+                    qb_name: "",
+                    passing_score: 60,
+                    test_time: 30,
+                    file_list: [],
+                    new_papertype_dialog_visible: false,
+                    loading: false
+                };
+            },
+            methods: {
+                onBeforeUploadFile: function(file) {
+                    if(!this.qb_name || !this.passing_score || !this.test_time) {
+                        alert("请将题库信息填写完整。");
+                        return false;
+                    }
+                    this.loading = true;
+                },
+                onUploadFileSuccess: function(response, file, fileList) {
+                    if(response.errmsg != "OK")
+                        alert(JSON.stringify(response));
+                    else
+                        alert('上传成功。');
+                    this.loading = false;
+                },
+                onUploadFileError: function(err, file, fileLIst) {
+                    alert("异常：" + JSON.stringify(err));
+                    this.loading = false;
+                },
+                onPaperTypeFocus: function(event) {
+                    this.paper_type_org = this.paper_type;
+                },
+                onPaperTypeChange: function(val) {
+                    if(val === -1) {
+                        this.paper_type = this.paper_type_org;
+                        var new_paper_type_name = prompt("请输入新的题库名称：");
+                        if(new_paper_type_name === ""){
+                            alert("名称不能为空。");
+                            return;
+                        }
+
+                        if(new_paper_type_name != null) {
+                            var that = this;
+                            v_requests(that, "newPaperType", function(result) {
+                                result.json().then(obj => {
+                                    if(obj.errmsg) 
+                                        throw obj.errmsg;
+                                    if(obj.new_type_id)
+                                        that.initPaperTypeCombo(obj.new_type_id);
+                                }).catch(err => {
+                                    alert(JSON.stringify(err));
+                                });
+                            }, function(err) {
+                                alert(JSON.stringify(err));
+                            }, { type_name: new_paper_type_name });
+                        }
+                    }
+                },
+                initPaperTypeCombo: function(init_type) {
+                    var that = this;
+                    v_requests(that, "getPaperTypeOptions", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj) {
+                                that.paper_type_options = obj;
+                                that.paper_type_options.push({ "label": "新建...", "value": -1 });
+                                if(init_type === -2 && obj.length > 0)
+                                    that.paper_type = obj[0].value;
+                                else{
+                                    //直接赋值会导致显示的是value值而非label值，要切走再切回来
+                                    that.paper_type = parseInt(init_type);
+                                    that.$refs.paper_type_select.$nextTick(function() {
+                                        that.paper_type = that.paper_type_org;
+                                        that.$refs.paper_type_select.$nextTick(function() {
+                                            that.paper_type = parseInt(init_type);
+                                        });
+                                    });
+                                }
+                            }
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {});
+                }
+            },
+            mounted: function() {
+                this.initPaperTypeCombo(-2);
+            },
+            template: `
+                <table style="border-width: 0; width: 100%; height: 100%; border-collapse: collapse; padding: 0; margin: 0">
+                    <tr>
+                        <td style="display: flex; flex-direction: row; justify-content: center; height: 80px">
+                            请选择题库名称：<el-select
+                                                ref="paper_type_select"
+                                                id="paper_type_select"
+                                                size="mini"
+                                                v-model="paper_type"
+                                                style="margin-right: 25px; width: 220px"
+                                                @change="onPaperTypeChange"
+                                                @focus="onPaperTypeFocus"
+                                                :disabled="loading"
+                                            >
+                                <el-option
+                                    v-for="item in paper_type_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"        
+                                ></el-option>
+                            </el-select>
+                            请输入题库类型：<el-input :disabled="loading" size="mini" v-model="qb_name" placeholder="请输入题库名称" style="width: 200px; margin-right: 25px"></el-input>
+                            及格分数：<el-input-number :disabled="loading" size="mini" v-model="passing_score" :min="1" :max="100" style="margin-right: 25px"></el-input-number>
+                            考试时间：<el-input-number :disabled="loading" size="mini" v-model="test_time" :min="1" :max="180"></el-input-number>分钟&nbsp;&nbsp;
+                            <el-upload
+                                action="uploadQuestionLibraryFile"
+                                :file-list="file_list"
+                                :before-upload="onBeforeUploadFile"
+                                :on-success="onUploadFileSuccess"
+                                :on-error="onUploadFileError"
+                                :data="{ 'paper_type': paper_type, 'paper_name': qb_name, 'passing_score': passing_score, 'test_time': test_time * 60 * 1000 }"
+                                :limit="1"
+                                :disabled="loading"
+                            >
+                                <el-button size="mini" type="primary">导入</el-button>
+                            </el-upload>
+                        </td>
+                        <td style="display: flex; flex-direction: row; justify-content: center; align-items: center">
+                            <table style="border-collapse: collapse">
+                                <tr>
+                                    <td colspan="99" style="text-align: center; border-width: 1px 0px 1px 0px; border-style: solid; border-color: red">Excel题库文件示例</td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center">序号</td>
+                                    <td style="text-align: center">题形代码</td>
+                                    <td style="text-align: center">题干</td>
+                                    <td style="text-align: center">选项1</td>
+                                    <td style="text-align: center">选项2</td>
+                                    <td style="text-align: center">选项3</td>
+                                    <td style="text-align: center">选项4</td>
+                                    <td style="text-align: center">正确选项</td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center">👇</td>
+                                    <td style="text-align: center">👇</td>
+                                    <td style="text-align: center">👇</td>
+                                    <td style="text-align: center">👇</td>
+                                    <td style="text-align: center">👇</td>
+                                    <td style="text-align: center">👇</td>
+                                    <td style="text-align: center">👇</td>
+                                    <td style="text-align: center">👇</td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 100px; border: 2px ridge white">1</td>
+                                    <td style="width: 100px; border: 2px ridge white">1</td>
+                                    <td style="border: 2px ridge white">货车车体倾斜容许限度为（）mm。</td>
+                                    <td style="width: 100px; border: 2px ridge white">A.100</td>
+                                    <td style="width: 100px; border: 2px ridge white">B.80</td>
+                                    <td style="width: 100px; border: 2px ridge white">C.75</td>
+                                    <td style="width: 100px; border: 2px ridge white">D.150</td>
+                                    <td style="width: 100px; border: 2px ridge white">C</td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 100px; border: 2px ridge white">2</td>
+                                    <td style="width: 100px; border: 2px ridge white">2</td>
+                                    <td style="border: 2px ridge white">在集中区调车作业时，对需要凭借的显示说法错误的是（）。</td>
+                                    <td style="width: 100px; border: 2px ridge white">A.调车信号</td>
+                                    <td style="width: 100px; border: 2px ridge white">B.信号机状态</td>
+                                    <td style="width: 100px; border: 2px ridge white">C.运行信号</td>
+                                    <td style="width: 100px; border: 2px ridge white">D.扳道员的还道信号</td>
+                                    <td style="width: 100px; border: 2px ridge white">BCD</td>
+                                </tr>
+                                <tr>
+                                    <td style="width: 100px; border: 2px ridge white">3</td>
+                                    <td style="width: 100px; border: 2px ridge white">3</td>
+                                    <td style="border: 2px ridge white">挂有机车（推峰作业除外）禁止溜放调车。</td>
+                                    <td style="border: 2px ridge white">√</td>
+                                    <td style="border: 2px ridge white">×</td>
+                                    <td style="border: 2px ridge white"></td>
+                                    <td style="border: 2px ridge white"></td>
+                                    <td style="border: 2px ridge white">√</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="99">
+                                        <table style="font-size: 15px; color: red">
+                                            <tr>
+                                                <td>注意事项：</td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <p style="margin: 0; padding: 0">
+                                                        1、Excel文件中不允许有表头。
+                                                    </p>
+                                                    <p style="text-indent: -1.5em; padding: 0 0 0 1.5em; margin: 0">
+                                                        2、单选、多选题的备选项必须严格依照<span style="text-decoration: underline; font-weight: bold">半角英文大写字母</span>+<span style="text-decoration: underline; font-weight: bold">半角标点“.”</span>+选项内容的形式填写，同时正确选择也必须为半角大字英文字母；<br>
+                                                        判断题的两个备选项必须分别为字符“√”和“×”，正确选项也必须为此两字符之一。
+                                                    </p>
+                                                    <p style="margin: 0; padding: 0">
+                                                        3、“及格分数”和“练习时间”为职工练习时使用。
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            `
+        };
+        var QBExport = {
+            data: function() {
+                return {
+                    export_table: [],
+                    paper_type: 0,
+                    paper_type_options: [],
+                    papers: [],
+                    paper_id: 0,
+                    table_height: 0,
+                    window_onresize_org: null,
+                    loading: false
+                };
+            },
+            methods: {
+                onPaperTypeChange: function(val) {
+                    var that = this;
+                    v_requests(that, "getPapersByTypeAdmin", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj) {
+                                that.papers = obj;
+                                that.paper_id = obj[0].key;
+                            }
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { type_id: val});
+                },
+                onPreviewClicked: function() {
+                    var that = this;
+                    that.loading = true;
+                    v_requests(that, "getQuestionsInfo", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.rows) {
+                                that.export_table = obj.rows;
+                                $("#table_title").text(obj.paper_name);
+                                this.table_height = $("main.el-main").height() - $("#table_headers").height() -$("#table_title").height() - $("#condition_group").height() - 10;
+                                $("#table_headers").width($("#questions_table").width() - 17);
+                                that.$refs.ques_table.$nextTick(function() {
+                                    that.loading = false;
+                                });
+                            }
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.loading = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.loading = false;
+                    }, {
+                        paper_id: that.paper_id
+                    });
+                },
+                onExport: function() {
+                    if(!this.export_table || this.export_table.length === 0) {
+                        alert("请先预览。");
+                        return;
+                    }
+
+                    var wb = XLSX.utils.table_to_book(document.querySelector("#questions_table"));
+                    var wbout = XLSX.write(wb, { bookType: "xlsx", bookSST: true, type: "array" });
+                    try {
+                        saveAs(new Blob([wbout], { type: "application/octet-stream" }), $("#table_title").text() + ".xlsx");
+                    }
+                    catch(e) {
+                        alert(e, wbout);
+                    }
+                }
+            },
+            mounted: function() {
+                var that = this;
+
+                this.window_onresize_org = window.onresize;
+
+                window.onresize = function() {
+                    this.table_height = $("main.el-main").height() - $("#table_headers").height() -$("#table_title").height() - $("#condition_group").height() - 10;
+                    $("#table_headers").width($("#questions_table").width() - 17);
+                };
+
+                v_requests(that, "getPaperTypeOptions", function(result) {
+                    result.json().then(obj => {
+                        if(obj.errmsg) 
+                            throw obj.errmsg;
+                        if(obj) {
+                            that.paper_type_options = obj;
+                            if(obj.length > 0) {
+                                that.paper_type = obj[0].value;
+                                that.onPaperTypeChange(that.paper_type);
+                            }
+                        }
+                    }).catch(err => {
+                        alert(err);
+                    });
+                }, function(err) {
+                    alert(err);
+                });
+            },
+            unmounted: function() {
+                window.onresize = this.window_onresize_org;
+            },
+            template: `
+                <table style="width: 100%; height: 100%; border-collapse: collapse; margin: 0; padding: 0; border-width: 0">
+                    <tr style="height: 30px">
+                        <td id="condition_group" style="display: flex; flex-direction: row; justify-content: center">
+                            请选择题库名称：<el-select
+                                size="mini"
+                                v-model="paper_type"
+                                style="margin-right: 25px; width: 220px"
+                                @change="onPaperTypeChange"
+                                :disabled="loading"
+                            >
+                                <el-option
+                                    v-for="item in paper_type_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"        
+                                ></el-option>
+                            </el-select>
+                            <el-select
+                                size="mini"
+                                v-model="paper_id"
+                                style="margin-right: 25px; width: 220px"
+                                :disabled="loading"
+                            >
+                                <el-option
+                                    v-for="item in papers"
+                                    :key="item.key"
+                                    :label="item.label"
+                                    :value="item.key"
+                                >
+                                </el-option>
+                            </el-select>
+                            <el-button :loading="loading" size="mini" type="primary" @click="onPreviewClicked">预览</el-button>
+                            <el-button :loading="loading" size="mini" type="warning" @click="onExport">导出</el-button>
+                        </td>
+                    </tr>
+                    <tr style="height: 24px">
+                        <td id="table_title" style="display: flex; flex-direction: row; justify-content: center">
+                        </td>
+                    </tr>
+                    <tr style="height: 18px">
+                        <td style="padding-bottom: 0; border-bottom-width: 0">
+                            <table id="table_headers" style="border: 1px solid rgb(235, 238, 245); border-collapse: collapse; margin: 0; padding: 0; font-size: 12px">
+                                <tr>
+                                    <td style="width: 49px; padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">序号</td>
+                                    <td style="width: 49px; padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">题形</td>
+                                    <td style="padding: 0; width: 450px; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">题干</td>
+                                    <td style="padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">选项1</td>
+                                    <td style="padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">选项2</td>
+                                    <td style="padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">选项3</td>
+                                    <td style="padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">选项4</td>
+                                    <td style="padding: 0; width: 79px; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">答案</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="display: flex; flex-direction: row; justify-content: center; padding-top: 0">
+                            <el-table
+                                id="questions_table"
+                                :data="export_table"
+                                border
+                                size="mini"
+                                :height="table_height"
+                                :show-header="false"
+                                v-loading="loading"
+                                element-loading-text="正在玩了命地加载……"
+                                element-loading-spinner="el-icon-loading"
+                                element-loading-background="rgba(0, 0, 0, 0, 0.8)"
+                                ref="ques_table"
+                            >
+                                <el-table-column
+                                    width="50px"
+                                    prop="sn"
+                                    align="center"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    width="50px"
+                                    prop="question_type"
+                                    align="center"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    width="450px"
+                                    prop="question_title"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    prop="selection1"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    prop="selection2"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    prop="selection3"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    prop="selection4"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    width="80px"
+                                    prop="question_right_answers"
+                                >
+                                </el-table-column>
+                            </el-table>
+                        </td>
+                    </tr>
+                </table>
+            `
+        };
+        var QBEdit = {
+            data: function() {
+                return {
+                    questions_table_data: [],
+                    paper_type: 0,
+                    paper_type_options: [],
+                    paper_name: "",
+                    papers: [],
+                    paper_id: 0,
+                    table_height: 0,
+                    window_onresize_org: null,
+                    question_edit_dialog_visible: false,
+                    cur_question: {},
+                    dialog_q_type: 1,
+                    dialog_q_title: "",
+                    dialog_q_selection1: "",
+                    dialog_q_selection2: "",
+                    dialog_q_selection3: "",
+                    dialog_q_selection4: "",
+                    dialog_right: "",
+                    dialog_multiselections: [],
+                    file_list: [],
+                    loading: false
+                };
+            },
+            methods: {
+                onPaperTypeChange: function(val) {
+                    var that = this;
+                    v_requests(that, "getPapersByTypeAdmin", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj) {
+                                that.papers = obj;
+                                that.paper_id = obj[0].key;
+
+                                for(var i in that.papers) {
+                                    if(that.papers[i].key == obj[0].key) {
+                                        that.paper_name = that.papers[i].label;
+                                        break;
+                                    }
+                                }
+                            }
+                        }).catch(err => {
+                            alert(err);
+                        });
+                    }, function(err) {
+                        alert(err);
+                    }, { type_id: val});
+                },
+                onLookupClicked: function() {
+                    var that = this;
+                    this.loading = true;
+                    v_requests(that, "getQuestionsInfo", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.rows) {
+                                that.questions_table_data = obj.rows;
+                                this.table_height = $("main.el-main").height() - $("#condition_group").height() - 10;
+                                that.$refs.ques_table.$nextTick(function() {
+                                    that.loading = false;
+                                });
+                            }
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.loading = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.loading = false;
+                    }, {
+                        paper_id: that.paper_id
+                    });
+                },
+                onPaperChange: function(val) {
+                    for(var i in this.papers) {
+                        if(this.papers[i].key == val) {
+                            this.paper_name = this.papers[i].label;
+                            break;
+                        }
+                    }
+                },
+                onEditQuestion: function(row) {
+                    this.cur_question = row;
+                    this.dialog_q_type = row.question_type;
+                    this.dialog_q_title = row.question_title;
+                    this.dialog_q_selection1 = row.selection1;
+                    this.dialog_q_selection2 = row.selection2;
+                    this.dialog_q_selection3 = row.selection3;
+                    this.dialog_q_selection4 = row.selection4;
+                    this.dialog_right = row.question_right_answers;
+                    this.question_edit_dialog_visible = true;
+                    if(this.dialog_q_type === 2)
+                        this.dialog_multiselections = this.dialog_right.split("");
+                },
+                onQuestionTypeChanged: function(val) {
+                    if(val === 2)
+                        this.dialog_multiselections = this.dialog_right.split("");
+                },
+                onMultiSelectionChanged: function(val) {
+                    this.dialog_right = val.join("");
+                },
+                onSaveQuestion: function() {
+                    var that = this;
+                    if(this.dialog_q_type === 3) {
+                        this.dialog_q_selection1 = "√";
+                        this.dialog_q_selection2 = "×";
+                        this.dialog_q_selection3 = "";
+                        this.dialog_q_selection4 = "";
+                    }
+                    if(this.dialog_q_type === this.cur_question.question_type &&
+                        this.dialog_q_title === this.cur_question.question_title &&
+                        this.dialog_q_selection2 === this.cur_question.selection2 &&
+                        this.dialog_q_selection1 === this.cur_question.selection1 &&
+                        this.dialog_q_selection3 === this.cur_question.selection3 &&
+                        this.dialog_q_selection4 === this.cur_question.selection4 &&
+                        this.dialog_right === this.cur_question.question_right_answers
+                    ){
+                        this.question_edit_dialog_visible = false;
+                        return;
+                    }
+                    v_requests(that, "saveEditedQuestion", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg != "OK")
+                                throw obj.errmsg;
+                            else {
+                                alert("保存成功。");
+                                that.onLookupClicked();
+                                that.question_edit_dialog_visible = false;
+                            }
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.question_edit_dialog_visible = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.question_edit_dialog_visible = false;
+                    }, {
+                        question_type: that.dialog_q_type,
+                        question_title: that.dialog_q_title,
+                        question_answer_texts: (that.dialog_q_type === 3 ? [ that.dialog_q_selection1, that.dialog_q_selection2 ].join("|") : [ that.dialog_q_selelction1, that.dialog_q_selelction2, that.dialog_q_selelction3, that.dialog_q_selelction4 ].join("|")),
+                        question_right_answers: that.dialog_right,
+                        question_id: that.cur_question.question_id,
+                        deleted: 0
+                    });
+                },
+                onDeleteQuestion: function(row) {
+                    var r = confirm("您将要删除序号为" + row.sn + "，题干为“" + row.question_title + "”的试题，此操作不可逆，确认吗？");
+                    var that = this;
+                    if(r) {
+                        v_requests(that, "saveEditedQuestion", function(result) {
+                            result.json().then(obj => {
+                                if(obj.errmsg != "OK")
+                                    throw obj.errmsg;
+                                else {
+                                    alert("保存成功。");
+                                    that.onLookupClicked();
+                                    that.question_edit_dialog_visible = false;
+                                }
+                            }).catch(err => {
+                                alert(JSON.stringify(err));
+                                that.question_edit_dialog_visible = false;
+                            });
+                        }, function(err) {
+                            alert(JSON.stringify(err));
+                            that.question_edit_dialog_visible = false;
+                        }, {
+                            question_id: row.question_id,
+                            deleted: 1
+                        });
+                    }
+                },
+                onDelete: function () {
+                    var that = this;
+                    var r = confirm("您将要删除题库“" + this.paper_name + "”，此操作不可逆，确认吗？");
+                    if(r) {
+                        v_requests(that, "deletePaper", function(result) {
+                            result.json().then(obj => {
+                                if(obj.errmsg != "OK")
+                                    throw obj.errmsg;
+                                else {
+                                    alert("删除成功。");
+                                    that.onPaperTypeChange(that.paper_type);
+                                    that.questions_table_data.splice(0, that.questions_table_data.length);
+                                }
+                            }).catch(err => {
+                                alert(JSON.stringify(err));
+                            });
+                        }, function(err) {
+                            alert(JSON.stringify(err));
+                        }, {
+                            paper_id: that.paper_id
+                        });
+                    }
+                },
+                onUploadFileSuccess: function(response, file, fileList) {
+                    if(response.errmsg != "OK")
+                        alert(JSON.stringify(response));
+                    else {
+                        alert('上传成功。');
+                        that.onLookupClicked();
+                    }
+                },
+                onUploadFileError: function(err, file, fileLIst) {
+                    alert("异常：" + JSON.stringify(err));
+                }
+            },
+            mounted: function() {
+                var that = this;
+
+                this.window_onresize_org = window.onresize;
+
+                window.onresize = function() {
+                    this.table_height = $("main.el-main").height() - $("#condition_group").height() - 10;
+                };
+
+                v_requests(that, "getPaperTypeOptions", function(result) {
+                    result.json().then(obj => {
+                        if(obj.errmsg) 
+                            throw obj.errmsg;
+                        if(obj) {
+                            that.paper_type_options = obj;
+                            if(obj.length > 0) {
+                                that.paper_type = obj[0].value;
+                                that.onPaperTypeChange(that.paper_type);
+                            }
+                        }
+                    }).catch(err => {
+                        alert(JSON.stringify(err));
+                    });
+                }, function(err) {
+                    alert(JSON.stringify(err));
+                });
+            },
+            unmounted: function() {
+                window.onresize = this.window_onresize_org;
+            },
+            template: `
+                <table style="width: 100%; height: 100%; border-collapse: collapse; margin: 0; padding: 0; border-width: 0">
+                    <tr style="height: 30px">
+                        <td id="condition_group" style="display: flex; flex-direction: row; justify-content: center">
+                            请选择题库名称：<el-select :disabled="loading" size="mini" v-model="paper_type" style="margin-right: 25px; width: 220px" @change="onPaperTypeChange">
+                                <el-option
+                                    v-for="item in paper_type_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"        
+                                ></el-option>
+                            </el-select>
+                            <el-select :disabled="loading" size="mini" v-model="paper_id" style="margin-right: 25px; width: 220px">
+                                <el-option
+                                    v-for="item in papers"
+                                    :key="item.key"
+                                    :label="item.label"
+                                    :value="item.key"
+                                >
+                                </el-option>
+                            </el-select>
+                            <el-button :loading="loading" size="mini" type="primary" @click="onLookupClicked">查看</el-button>
+                            <el-upload
+                                action="appendQuestions"
+                                :file-list="file_list"
+                                :on-success="onUploadFileSuccess"
+                                :on-error="onUploadFileError"
+                                :data="{ 'paper_id': paper_id }"
+                                :limit="1"
+                                style="margin: 0 10px 0 10px"
+                                :disabled="loading"
+                            >
+                                <el-button :loading="loading" size="mini" type="success">追加</el-button>
+                            </el-upload>
+                            <el-button :loading="loading" size="mini" type="danger" @click="onDelete">删除</el-button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="display: flex; flex-direction: row; justify-content: center; padding-top: 0">
+                            <el-table
+                                id="questions_table"
+                                :data="questions_table_data"
+                                border
+                                :height="table_height"
+                                v-loading="loading"
+                                element-loading-text="正在玩了命地加载……"
+                                element-loading-spinner="el-icon-loading"
+                                element-loading-background="rgba(0, 0, 0, 0, 0.8)"
+                                ref="ques_table"
+                            >
+                                <el-table-column
+                                    width="50px"
+                                    prop="sn"
+                                    align="center"
+                                    label="序号"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    width="50px"
+                                    prop="question_type"
+                                    align="center"
+                                    label="题形"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    width="450px"
+                                    prop="question_title"
+                                    label="题干"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    prop="selection1"
+                                    label="选项1"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    prop="selection2"
+                                    label="选项2"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    prop="selection3"
+                                    label="选项3"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    prop="selection4"
+                                    label="选项4"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    width="80px"
+                                    prop="question_right_answers"
+                                    label="答案"
+                                >
+                                </el-table-column>
+                                <el-table-column
+                                    width="150px"
+                                    label="操作"
+                                >
+                                    <template slot-scope="scope">
+                                        <el-button @click="onEditQuestion(scope.row)" size="mini" type="primary">编辑</el-button>
+                                        <el-button @click="onDeleteQuestion(scope.row)" size="mini" type="danger">删除</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            <el-dialog
+                                title="编辑试题"
+                                :visible.sync="question_edit_dialog_visible"
+                                width="760px"
+                            >
+                                <table style="width: 100%; height: 100%; margin: 0; padding: 0; border-collapse: collapse">
+                                    <tr style="height: 30px">
+                                        <td style="width: 100px">
+                                            {% verbatim %}
+                                               序号： {{ cur_question.sn }}
+                                            {% endverbatim %}
+                                        </td>
+                                        <td>
+                                            题形：<el-select v-model="dialog_q_type" style="width: 100px" size="mini" @change="onQuestionTypeChanged">
+                                                <el-option
+                                                    :key="1"
+                                                    label="单选"
+                                                    :value="1"
+                                                >
+                                                </el-option>
+                                                <el-option
+                                                    :key="2"
+                                                    label="多选"
+                                                    :value="2"
+                                                >
+                                                </el-option>
+                                                <el-option
+                                                    :key="3"
+                                                    label="判断"
+                                                    :value="3"
+                                                >
+                                                </el-option>
+                                            </el-select>
+                                        </td>
+                                    </tr>
+                                    <tr style="height: 24px">
+                                        <td style="text-align: left">题干：</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="99">
+                                            <el-input type="textarea" v-model="dialog_q_title" :rows="3" size="mini" resize="none"></el-input>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="dialog_q_type !== 3" style="height: 24px">
+                                        <td style="text-align: left">选项1：</td>
+                                    </tr>
+                                    <tr v-if="dialog_q_type !== 3">
+                                        <td colspan="99">
+                                            <el-input type="textarea" v-model="dialog_q_selection1" :rows="2" size="mini" resize="none"></el-input>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="dialog_q_type !== 3" style="height: 24px">
+                                        <td style="text-align: left">选项2：</td>
+                                    </tr>
+                                    <tr v-if="dialog_q_type !== 3">
+                                        <td colspan="99">
+                                            <el-input type="textarea" v-model="dialog_q_selection2" :rows="2" size="mini" resize="none"></el-input>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="dialog_q_type !== 3" style="height: 24px">
+                                        <td style="text-align: left">选项3：</td>
+                                    </tr>
+                                    <tr v-if="dialog_q_type !== 3">
+                                        <td colspan="99">
+                                            <el-input type="textarea" v-model="dialog_q_selection3" :rows="2" size="mini" resize="none"></el-input>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="dialog_q_type !== 3" style="height: 24px">
+                                        <td style="text-align: left">选项4：</td>
+                                    </tr>
+                                    <tr v-if="dialog_q_type !== 3">
+                                        <td colspan="99">
+                                            <el-input type="textarea" v-model="dialog_q_selection4" :rows="2" size="mini" resize="none"></el-input>
+                                        </td>
+                                    </tr>
+                                    <tr style="height: 24px">
+                                        <td style="text-align: left">正确选项：</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="99">
+                                            <template v-if="dialog_q_type === 1">
+                                                <el-radio v-model="dialog_right" label="A" size="mini">A</el-radio>
+                                                <el-radio v-model="dialog_right" label="B" size="mini">B</el-radio>
+                                                <el-radio v-model="dialog_right" label="C" size="mini">C</el-radio>
+                                                <el-radio v-model="dialog_right" label="D" size="mini">D</el-radio>
+                                            </template>
+                                            <template v-else-if="dialog_q_type === 2">
+                                                <el-checkbox-group v-model="dialog_multiselections" size="mini" @change="onMultiSelectionChanged">
+                                                    <el-checkbox label="A">A</el-checkbox>
+                                                    <el-checkbox label="B">B</el-checkbox>
+                                                    <el-checkbox label="C">C</el-checkbox>
+                                                    <el-checkbox label="D">D</el-checkbox>
+                                                </el-checkbox-group>
+                                            </template>
+                                            <template v-else>
+                                                <el-radio v-model="dialog_right" label="√" size="mini">√</el-radio>
+                                                <el-radio v-model="dialog_right" label="×" size="mini">×</el-radio>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <span slot="footer">
+                                    <el-button type="primary" size="mini" @click="onSaveQuestion">保存</el-button>
+                                    <el-button size="mini" @click="question_edit_dialog_visible = false">取消</el-button>
+                                </span>
+                            </el-dialog>
+                        </td>
+                    </tr>
+                </table>
+            `
+        };
+        new Vue({
+            el: "#app",
+            data: {
+                visible: false,
+                currentMain: ManageExams,
+                asideMenuMap: {
+                    "charts": Charts,
+                    "tops": Tops,
+                    "infos": Infos,
+                    "manage-members": ManageMember,
+                    "manage-exams": ManageExams,
+                    "qbimport": QBImport,
+                    "qbexport": QBExport,
+                    "qbedit": QBEdit
+                }
+            },
+            methods: {
+                onAsideMenuSelected: function(key, keyPath) {
+                    this.currentMain = this.asideMenuMap[key];
+                    var that = this;
+                    console.log(key);
+                    switch(key) {
+                        case "charts":
+                            Vue.nextTick(function(){
+                                //v_requests("getWorkshopStat", {  });
+                                var options = {
+                                    title: {
+                                        text: "考试统计"
+                                    },
+                                    xAxis: {
+                                        categories: ["苹果", "香蕉", "橙子"]
+                                    },
+                                    yAxis: {
+                                        title: {
+                                            text: "吃水果个数"
+                                        }
+                                    },
+                                    series: [{
+                                        name: "小明",
+                                        data: [1, 0, 4]
+                                    }, {
+                                        name: "小红",
+                                        data: [5, 7, 3]
+                                    }]
+                                };
+                                var chart = Highcharts.chart("chart-container", options);
+                            });
+                            break;
+                    }
+                }
+            },
+        });
+    </script>
+</html>
