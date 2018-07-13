@@ -88,10 +88,18 @@
                                     <span slot="title">题库查询与编辑</span>
                                 </el-menu-item>
                             </el-submenu>
-                            <el-menu-item index="manage-members">
-                                <i class="el-icon-mobile-phone"></i>
-                                <span slot="title">人员管理</span>
-                            </el-menu-item>
+                            <el-submenu index="members-management">
+                                <template slot="title">
+                                    <i class="el-icon-mobile-phone"></i>
+                                    <span slot="title">人员管理</span>
+                                </template>
+                                <el-menu-item index="manage-members">
+                                    <span slot="title">人员查询与编辑</span>
+                                </el-menu-item>
+                                <el-menu-item index="import-members">
+                                    <span slot="title">人员库导入</span>
+                                </el-menu-item>
+                            </el-submenu>
                             <el-submenu index="statistics">
                                 <template slot="title">
                                     <i class="el-icon-sort"></i>
@@ -363,7 +371,7 @@
                 </table>
             `
         };
-        var ManageMember = {
+        var ManageMembers = {
             data: function() {
                 return {
                     window_resize_org: window.onresize,
@@ -723,6 +731,9 @@
                 </table>
             `
         };
+        var ImportMembers = {
+
+        };
         var Infos = {
             data: function() {
                 return {
@@ -730,8 +741,10 @@
                     paper_date_range: [],
                     info_workshop: "",
                     info_worktype: "",
+                    info_position: "",
                     info_workshop_options: [],
                     info_worktype_options: [],
+                    info_position_options: [],
                     dialog_workshop: "",
                     dialog_name: "",
                     dialog_paper_id: "",
@@ -795,7 +808,8 @@
                         "date_start": (that.paper_date_range.length == 2 ? that.paper_date_range[0] : ""),
                         "date_end": (that.paper_date_range.length == 2 ? that.paper_date_range[1] : ""),
                         "workshop": that.info_workshop,
-                        "worktype": that.info_worktype
+                        "worktype": that.info_worktype,
+                        "position": that.info_position
                     });
                 },
                 onMissedClicked: function(curRow) {
@@ -964,6 +978,7 @@
                 }
                 getInfoComboData("workshop");
                 getInfoComboData("worktype");
+                getInfoComboData("position");
             },
             template: `
                 <table id="info_frame" style="width: 100%; height: 100%; border-width: 0px; border-collapse: collpase; padding: 0px; margin: 0px">
@@ -997,7 +1012,15 @@
                                     :value="item.value"
                                 ></el-option>
                             </el-select>
-                            <el-button round icon="el-icon-search" size="mini" type="primary" @click="onLookupList">查找</el-button>
+                            职名：<el-select size="mini" v-model="info_position" placeholder="请选择职名" style="margin-right: 25px; width: 110px">
+                                <el-option
+                                    v-for="item in info_position_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                ></el-option>
+                            </el-select>
+                            <el-button icon="el-icon-search" size="mini" type="primary" @click="onLookupList">查找</el-button>
                         </td>
                     </tr>
                     <tr>
@@ -1366,9 +1389,9 @@
                                     that.positions_allow_change = true;
                                 });
                             });
-                            this.selected_worktypes.splice(0, this.selected_worktypes.length);
-                            this.selected_workshops.splice(0, this.selected_workshops.length);
-                            this.selected_positions.splice(0, this.selected_positions.length);
+                            that.selected_worktypes.splice(0, that.selected_worktypes.length);
+                            that.selected_workshops.splice(0, that.selected_workshops.length);
+                            that.selected_positions.splice(0, that.selected_positions.length);
                         }
                     });
                 },
@@ -1414,12 +1437,16 @@
                         alert("请选择题库");
                         return;
                     }
-                    if(this.selected_members.length <= 0){
+                    if(this.selected_members.length <= 0) {
                         alert("请选择参考人员。");
                         return;
                     }
-                    document.getElementById("members_group").disabled = "disabled";
-                    document.getElementById("properties_group").disabled = "disabled";
+                    if(this.selected_papers.length <= 0) {
+                        alert("请选择题库。");
+                        return;
+                    }
+                    document.getElementById("members_group").disabled = true;
+                    document.getElementById("properties_group").disabled = true;
                     
                     var that = this;
                     v_requests(that, "createExams", function(result) {
@@ -1428,19 +1455,19 @@
                                 if(obj.errmsg !== "OK")
                                     throw obj.errmsg;
                                 else{
-                                    document.getElementById("members_group").disabled = "false";
-                                    document.getElementById("properties_group").disabled = "false";
+                                    document.getElementById("members_group").disabled = undefined;
+                                    document.getElementById("properties_group").disabled = undefined;
                                     alert("出题完成。");
                                 }
                             }
                         }).catch(err => {
-                            document.getElementById("members_group").disabled = "false";
-                            document.getElementById("properties_group").disabled = "false";
+                            document.getElementById("members_group").disabled = undefined;
+                            document.getElementById("properties_group").disabled = undefined;
                             alert(JSON.stringify(err));
                         });
                     }, function(err) {
-                        document.getElementById("members_group").disabled = "false";
-                        document.getElementById("properties_group").disabled = "false";
+                        document.getElementById("members_group").disabled = undefined;
+                        document.getElementById("properties_group").disabled = undefined;
                         alert(JSON.stringify(err));
                     }, { 
                         workshops: that.selected_workshops.join(),
@@ -1674,7 +1701,12 @@
                     test_time: 30,
                     file_list: [],
                     new_papertype_dialog_visible: false,
-                    loading: false
+                    loading: false,
+                    log_data: null,
+                    worktypes: [],
+                    positions: [],
+                    selected_worktypes: [],
+                    selected_positions: []
                 };
             },
             methods: {
@@ -1683,13 +1715,19 @@
                         alert("请将题库信息填写完整。");
                         return false;
                     }
+                    if(this.selected_worktypes.length <= 0 || this.selected_positions.length <= 0) {
+                        if(!confirm("如果不选择题库的某一或全部适用范围， 则此范围将被视为全体成员。确认吗？"))
+                            return false;
+                    }
                     this.loading = true;
                 },
                 onUploadFileSuccess: function(response, file, fileList) {
                     if(response.errmsg != "OK")
                         alert(JSON.stringify(response));
-                    else
+                    else {
                         alert('上传成功。');
+                        this.getImportLog();
+                    }
                     this.loading = false;
                 },
                 onUploadFileError: function(err, file, fileLIst) {
@@ -1725,6 +1763,16 @@
                         }
                     }
                 },
+                onWorkTypeSelected: function(val) {
+                    this.selected_worktypes.splice(0, this.selected_worktypes.length);
+                    for(var i in val)
+                        this.selected_worktypes.push(val[i].value);
+                },
+                onPositionSelected: function(val) {
+                    this.selected_positions.splice(0, this.selected_positions.length);
+                    for(var i in val)
+                        this.selected_positions.push(val[i].value);
+                },
                 initPaperTypeCombo: function(init_type) {
                     var that = this;
                     v_requests(that, "getPaperTypeOptions", function(result) {
@@ -1753,15 +1801,58 @@
                     }, function(err) {
                         alert(JSON.stringify(err));
                     }, {});
+                },
+                getImportLog: function() {
+                    var that = this;
+                    v_requests(that, "getPaperImportLog", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj)
+                                that.log_data = obj;
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {});
                 }
             },
             mounted: function() {
                 this.initPaperTypeCombo(-2);
+                this.getImportLog();
+                var that = this;
+                v_requests(that, "getTopsComboData", function(result) {
+                    result.json().then(obj => {
+                        if(obj.errmsg) 
+                            throw obj.errmsg;
+                        if(obj.data) {
+                            that.worktypes = obj.data;
+                        }
+                    }).catch(err => {
+                        alert(JSON.stringify(err));
+                    });
+                }, function(err) {
+                    alert(JSON.stringify(err));
+                }, { combo: "worktype" });
+                v_requests(that, "getTopsComboData", function(result) {
+                    result.json().then(obj => {
+                        if(obj.errmsg) 
+                            throw obj.errmsg;
+                        if(obj.data) {
+                            that.positions = obj.data;
+                        }
+                    }).catch(err => {
+                        alert(JSON.stringify(err));
+                    });
+                }, function(err) {
+                    alert(JSON.stringify(err));
+                }, { combo: "position" });
             },
             template: `
                 <table style="border-width: 0; width: 100%; height: 100%; border-collapse: collapse; padding: 0; margin: 0">
-                    <tr>
-                        <td style="display: flex; flex-direction: row; justify-content: center; height: 80px">
+                    <tr style="height: 60px">
+                        <td style="display: flex; flex-direction: row; justify-content: center; height: 60px">
                             请选择题库名称：<el-select
                                                 ref="paper_type_select"
                                                 id="paper_type_select"
@@ -1788,13 +1879,73 @@
                                 :before-upload="onBeforeUploadFile"
                                 :on-success="onUploadFileSuccess"
                                 :on-error="onUploadFileError"
-                                :data="{ 'paper_type': paper_type, 'paper_name': qb_name, 'passing_score': passing_score, 'test_time': test_time * 60 * 1000 }"
+                                :data="{ 'paper_type': paper_type, 'paper_name': qb_name, 'passing_score': passing_score, 'test_time': test_time * 60 * 1000, 'worktypes': (selected_worktypes.length == worktypes.length ? '' : selected_worktypes.join()), 'positions': (selected_positions.length == positions.length ? '' : selected_positions.join()) }"
                                 :limit="1"
                                 :disabled="loading"
                             >
                                 <el-button size="mini" type="primary">导入</el-button>
                             </el-upload>
                         </td>
+                    </tr>
+                    <tr>
+                        <td style="display: flex; flex-direction: row; justify-content: center; height: 500px">
+                            <div style="display: flex; flex-direction: column; margin-right: 40px">
+                                <span style="margin: 5px 0 5px 0">题库导入记录：</span>
+                                <el-table
+                                    :data="log_data"
+                                    height="500px"
+                                    style="width: 400px"
+                                    size="mini"
+                                >
+                                    <el-table-column
+                                        label="导入日期"
+                                        width="200px"
+                                        prop="import_time"
+                                    >
+                                    </el-table-column>
+                                    <el-table-column
+                                        label="题库"
+                                        width="200px"
+                                        prop="name"
+                                    >
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+                            <div style="display: flex; flex-direction: column; margin-right: 40px">
+                                <span style="margin: 5px 0 5px 0">选择题库适用工种：</span>
+                                <el-table
+                                    :data="worktypes"
+                                    height="500px"
+                                    style="width: 192px"
+                                    border
+                                    @selection-change="onWorkTypeSelected"
+                                    ref="table_worktypes"
+                                >
+                                    <el-table-column type="selection" width="40px">
+                                    </el-table-column>
+                                    <el-table-column prop="label" label="工种列表" width="150px">
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+                            <div style="display: flex; flex-direction: column">
+                                <span style="margin: 5px 0 5px 0">选择题库适用岗位：</span>
+                                <el-table
+                                    :data="positions"
+                                    height="500px"
+                                    style="width: 242px"
+                                    border
+                                    @selection-change="onPositionSelected"
+                                    ref="table_positions"
+                                >
+                                    <el-table-column type="selection" width="40px">
+                                    </el-table-column>
+                                    <el-table-column prop="label" label="职名列表" width="200px">
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
                         <td style="display: flex; flex-direction: row; justify-content: center; align-items: center">
                             <table style="border-collapse: collapse">
                                 <tr>
@@ -1918,6 +2069,7 @@
                             if(obj.errmsg) 
                                 throw obj.errmsg;
                             if(obj.rows) {
+                                document.getElementById('table_headers').style.display = "";
                                 that.export_table = obj.rows;
                                 $("#table_title").text(obj.paper_name);
                                 this.table_height = $("main.el-main").height() - $("#table_headers").height() -$("#table_title").height() - $("#condition_group").height() - 10;
@@ -1927,10 +2079,12 @@
                                 });
                             }
                         }).catch(err => {
+                            document.getElementById('table_headers').style.display = "none";
                             alert(JSON.stringify(err));
                             that.loading = false;
                         });
                     }, function(err) {
+                        document.getElementById('table_headers').style.display = "none";
                         alert(JSON.stringify(err));
                         that.loading = false;
                     }, {
@@ -2026,16 +2180,16 @@
                     </tr>
                     <tr style="height: 18px">
                         <td style="padding-bottom: 0; border-bottom-width: 0">
-                            <table id="table_headers" style="border: 1px solid rgb(235, 238, 245); border-collapse: collapse; margin: 0; padding: 0; font-size: 12px">
+                            <table id="table_headers" style="display: none; color: rgb(96, 98, 102); border: 1px solid rgb(235, 238, 245); border-bottom-width: 0px; border-collapse: collapse; margin: 0; padding: 0; font-size: 14px">
                                 <tr>
-                                    <td style="width: 49px; padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">序号</td>
-                                    <td style="width: 49px; padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">题形</td>
-                                    <td style="padding: 0; width: 450px; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">题干</td>
-                                    <td style="padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">选项1</td>
-                                    <td style="padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">选项2</td>
-                                    <td style="padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">选项3</td>
-                                    <td style="padding: 0; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">选项4</td>
-                                    <td style="padding: 0; width: 79px; border-width: 1px 1px 0px 1px; border-style: solid; border-color: rgb(235, 238, 245)">答案</td>
+                                    <td style="width: 49px; padding: 12px 0 12px 0; text-align: center; border-width: 0px 1px 0px 0px; border-style: solid; border-color: rgb(235, 238, 245); font-weight: bold">序号</td>
+                                    <td style="width: 49px; padding: 12px 0 12px 0; text-align: center; border-width: 0px 1px 0px 0px; border-style: solid; border-color: rgb(235, 238, 245); font-weight: bold"">题形</td>
+                                    <td style="padding: 12px 0 12px 0; width: 450px; border-width: 0px 1px 0px 0px; border-style: solid; border-color: rgb(235, 238, 245); font-weight: bold"">题干</td>
+                                    <td style="padding: 12px 0 12px 0; border-width: 0px 1px 0px 0px; border-style: solid; border-color: rgb(235, 238, 245); font-weight: bold"">选项1</td>
+                                    <td style="padding: 12px 0 12px 0; border-width: 0px 1px 0px 0px; border-style: solid; border-color: rgb(235, 238, 245); font-weight: bold"">选项2</td>
+                                    <td style="padding: 12px 0 12px 0; border-width: 0px 1px 0px 0px; border-style: solid; border-color: rgb(235, 238, 245); font-weight: bold"">选项3</td>
+                                    <td style="padding: 12px 0 12px 0; border-width: 0px 1px 0px 0px; border-style: solid; border-color: rgb(235, 238, 245); font-weight: bold"">选项4</td>
+                                    <td style="padding: 12px 0 12px 0; width: 79px; border-width: 0px; border-style: solid; border-color: rgb(235, 238, 245); font-weight: bold"">答案</td>
                                 </tr>
                             </table>
                         </td>
@@ -2046,7 +2200,6 @@
                                 id="questions_table"
                                 :data="export_table"
                                 border
-                                size="mini"
                                 :height="table_height"
                                 :show-header="false"
                                 v-loading="loading"
@@ -2563,7 +2716,8 @@
                     "charts": Charts,
                     "tops": Tops,
                     "infos": Infos,
-                    "manage-members": ManageMember,
+                    "manage-members": ManageMembers,
+                    "import-members": ImportMembers,
                     "manage-exams": ManageExams,
                     "qbimport": QBImport,
                     "qbexport": QBExport,

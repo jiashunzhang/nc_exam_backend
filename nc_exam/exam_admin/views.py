@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.db import connection
 from django.db.models import Q
-from exam_admin.models import Department, WorkType, TestPapers, Members, Papers, PaperTypes, Position, Questions
+from exam_admin.models import Department, WorkType, ExamPapers, TestPapers, Members, Papers, PaperTypes, Position, Questions, PaperImportLog, PaperPositionRange, PaperWorkTypeRange
 from django.http import HttpResponse
 from datetime import datetime
 from datetime import timedelta
@@ -11,7 +13,7 @@ from functools import reduce
 from openpyxl import load_workbook, Workbook
 
 import simplejson as json
-import logging, os, operator
+import logging, os, sys, operator
 # Create your views here.
 def admin(request):
     return render(request, 'admin_main.html')
@@ -179,36 +181,46 @@ def getInfoTreeTop(request):
     end = request.POST.get('date_end', None)
     ws = request.POST.get('workshop', None)
     wt = request.POST.get('worktype', None)
-    
+    pos = request.POST.get('position', None)   
+
     try:
         conds = list()
         if start and end and start != '' and end != '':
             conds.append(Q(date_time__gte=start) & Q(date_time__lte=end))
+
         if ws and ws != '':
-            workshop = Department.objects.get(dep_id=int(ws))
-            if workshop:
+            workshop = Department.objects.filter(dep_id=int(ws)).exists()
+            if workshop.exists():
+                workshop = Department.objects.get(dep_id=int(ws))
                 conds.append(Q(weixin_open_id__in=Members.objects.filter(dep_id=workshop)))
             else:
                 return HttpResponse("{ \"errmsg\": \"车间不存在。\" }", content_type='text/json')
 
         if wt and wt != '':
-            worktype = WorkType.objects.get(work_type_id=int(wt))
+            worktype = WorkType.objects.filter(work_type_id=int(wt)).exists()
             if worktype:
-                conds.append(Q(paper_id__work_type_id=worktype))
+                worktype = WorkType.objects.get(work_type_id=int(wt))
+                conds.append(Q(weixin_open_id__work_type_id=worktype))
             else:
                 return HttpResponse("{ \"errmsg\": \"工种不存在。\" }", content_type='text/json')
 
-        conds.append(Q(if_exam=True))
+        if pos and pos != '':
+            position = Position.objects.filter(position_id=int(pos)).exists()
+            if position:
+                position = Position.objects.get(position_id=int(pos))
+                conds.append(Q(weixin_open_id__position_id=position))
+            else:
+                return HttpResponse("{ \"errmsg\": \"岗位不存在。\" }", content_type='text/json')
 
         ret = list()
         if len(conds) == 0:
-            papers = TestPapers.objects\
-                .filter(if_exam=True)\
+            papers = ExamPapers.objects\
+                .all()\
                 .values('paper_id')\
                 .annotate(examinee_count=Count('weixin_open_id'), score_sum=Sum('score'))\
                 .values('paper_id', 'examinee_count', 'score_sum')
         else:
-            papers = TestPapers.objects\
+            papers = ExamPapers.objects\
                 .select_related()\
                 .filter(reduce(operator.and_, conds))\
                 .values('paper_id')\
@@ -219,10 +231,10 @@ def getInfoTreeTop(request):
             paper = Papers.objects.get(paper_id=p['paper_id'])
             wt = paper.work_type_id
             should_mem_count = Members.objects.extra(select={ 'should_mem_count': 'select count(*) from Members where work_type_id=\'' + str(wt.work_type_id) + '\' and ifnull(weixin_open_id, \'\')<>\'\'' })
-            failed_count = TestPapers.objects.filter(paper_id=paper, score__lt=paper.passing_score, if_exam=True).aggregate(failed=Count('weixin_open_id'))
+            failed_count = ExamPapers.objects.filter(paper_id=paper, score__lt=paper.passing_score, if_exam=True).aggregate(failed=Count('weixin_open_id'))
             ret.append({\
                 'paper_id': p['paper_id'],\
-                'paper_name': paper.paper_name,\
+                        'paper_name': paper.paper_name,\
                 'examinee_count': p['examinee_count'],\
                 'score_sum': p['score_sum'],\
                 'should_mem_count': should_mem_count[0].should_mem_count,\
@@ -406,16 +418,15 @@ def uploadQuestionLibraryFile(request):
     paper_name = request.POST.get('paper_name', '')
     passing_score = request.POST.get('passing_score', '')
     test_time = request.POST.get('test_time', '')
-
-    if Papers.objects.filter(paper_name=paper_name.strip()).exists():
-        return HttpResponse('{ \"errmsg\": \"题库类型存在重名，请更换题库类型。\" }', content_type='text/json')
+    worktypes = request.POST.get('worktypes', '')
+    positions = request.POST.get('positions', '')
 
     f = request.FILES.get('file')
 
     if paper_type == '' or paper_name == '' or passing_score == '' or test_time == '' or not f:
         return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
 
-    file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'upload', f.name)
+    file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'upload', f.name).encode('utf-8').decode('utf-8')
     try:
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -444,7 +455,7 @@ def uploadQuestionLibraryFile(request):
             new_ques.question_title = ws.cell(row=i, column=3).value
             new_ques.question_sn = ws.cell(row=i, column=1).value
             new_ques.question_type = ws.cell(row=i, column=2).value
-            if int(ws.cell(row=i, column=2).value) == 3:
+            if ws.cell(row=i, column=2).value.strip() == '3':
                 new_ques.question_answer_texts = '%s|%s' % (ws.cell(row=i, column=4).value, ws.cell(row=i, column=5).value)
             else:
                 new_ques.question_answer_texts = '%s|%s|%s|%s' % (ws.cell(row=i, column=4).value, ws.cell(row=i, column=5).value, ws.cell(row=i, column=6).value, ws.cell(row=i, column=7).value)
@@ -454,9 +465,61 @@ def uploadQuestionLibraryFile(request):
         
         os.remove(file_path)
 
+        wt_arr = worktypes.split(',')
+        pos_arr = positions.split(',')
+
+        n_p_id = new_paper.paper_id
+
+        if worktypes == '':
+            wts = WorkType.objects.all()
+            for w in wts:
+                if PaperWorkTypeRange.objects.select_related("work_type_id").filter(work_type_id=w, paper_id=n_p_id).exists():
+                    continue
+
+                new_wt_map = PaperWorkTypeRange()
+                new_wt_map.paper_id = new_paper
+                new_wt_map.work_type_id = w
+                new_wt_map.save()
+        else:
+            for w in wt_arr:
+                if not WorkType.objects.filter(work_type_id=w).exists():
+                    continue
+
+                if PaperWorkTypeRange.objects.select_related("work_type_id").filter(work_type_id=w, paper_id=n_p_id).exists():
+                    continue
+
+                new_wt_map = PaperWorkTypeRange()
+                new_wt_map.paper_id = new_paper
+                new_wt_map.work_type_id = WorkType.objects.get(work_type_id=w)
+                new_wt_map.save()
+
+        if positions == '':
+            poses = Position.objects.all()
+            for p in poses:
+                if PaperPositionRange.objects.filter(position_id=p, paper_id=n_p_id).exists():
+                    continue
+
+                new_pos_map = PaperPositionRange()
+                new_pos_map.paper_id = new_paper
+                new_pos_map.position_id = p
+                new_pos_map.save()
+        else:
+            for p in pos_arr:
+                if not Position.objects.filter(position_id=p).exists():
+                    continue
+
+                if PaperPositionRange.objects.select_related("position_id").filter(position_id=p, paper_id=n_p_id).exists():
+                    continue
+
+                new_pos_map = PaperPositionRange()
+                new_pos_map.paper_id = new_paper
+                new_pos_map.position_id = Position.objects.get(position_id=p)
+                new_pos_map.save()
+
         return HttpResponse('{ \"errmsg\": \"OK\" }', content_type='text/json')
     except Exception as e:
-        return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return HttpResponse('{ \"errmsg\": \"%s\", \"lineno\": \"%s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
 
 @csrf_exempt
 def getQuestionsInfo(request):
@@ -674,6 +737,21 @@ def modMember(request):
     except Exception as e:
         return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
 
+@csrf_exempt
+def getPaperImportLog(request):
+    try:
+        logs = PaperImportLog.objects.all().order_by('-import_time')[:10]
+        ret = list()
+        for l in logs:
+            if not Papers.objects.filter(paper_id=l.paper_id).exists():
+                continue
+            pid = Papers.objects.get(paper_id=l.paper_id)
+            ret.append({ 'import_time': l.import_time.strftime('%Y年%m月%d日 %H:%M:%S'), 'name': pid.paper_name })
+
+        return HttpResponse(json.dumps(ret), content_type='text/json')
+    except Exception as e:
+        return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
+
 def dictfetchall(cursor):
     columns = [col[0] for col in cursor.description]
     return [
@@ -687,4 +765,3 @@ def debugLog(mes):
     fh.setFormatter(formatter)
     log.addHandler(fh)
     log.debug(mes)
-

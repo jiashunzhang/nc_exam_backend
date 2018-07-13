@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
 """nc_exam URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -37,6 +39,7 @@ urlpatterns = [
     path('registerNewUser', main_views.registerNewUser),
     path('handin', main_views.handin),
     path('handinExam', main_views.handinExam),
+    path('getUndoneExamCount', main_views.getUndoneExamCount),
     path('admin/', admin.site.urls),
     path('exam_admin', admin_views.admin),
     path('getTopsComboData', admin_views.getTopsComboData),
@@ -56,5 +59,6 @@ urlpatterns = [
     path('deletePaper', admin_views.deletePaper),
     path('newPaperType', admin_views.newPaperType),
     path('deletePaperType', admin_views.deletePaperType),
-    path('modMember', admin_views.modMember)
+    path('modMember', admin_views.modMember),
+    path('getPaperImportLog', admin_views.getPaperImportLog)
 ]

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
 from django.db import models
 from datetime import date
 
@@ -114,8 +116,69 @@ class TestQuestions(models.Model):
     score = models.FloatField()
     sn = models.IntegerField()
 
-    def __st__():
+    def __str__():
         return 'The question id is:' + str(test_question_id)
 
     class Meta:
         db_table = 'TestQuestions'
+
+class PaperImportLog(models.Model):
+    log_id = models.AutoField(primary_key=True)
+    import_time = models.DateTimeField()
+    paper_id = models.IntegerField(Papers)
+
+    def __str__():
+        return 'The log id is:' + str(paper_id)
+
+    class Meta:
+        db_table = 'PaperImportLog'
+
+class PaperPositionRange(models.Model):
+    paper_id = models.ForeignKey(Papers, on_delete=models.CASCADE, db_column='paper_id')
+    position_id = models.ForeignKey(Position, on_delete=models.CASCADE, db_column='position_id')
+
+    class Meta:
+        db_table = 'PaperPositionRange'
+
+class PaperWorkTypeRange(models.Model):
+    paper_id = models.ForeignKey(Papers, on_delete=models.CASCADE, db_column='paper_id')
+    work_type_id = models.ForeignKey(WorkType, on_delete=models.CASCADE, db_column='work_type_id')
+
+    class Meta:
+        db_table = 'PaperWorkTypeRange'
+
+class ExamPapers(models.Model):
+    exam_paper_id = models.AutoField(primary_key=True)
+    paper_ids = models.CharField(max_length=500)
+    date_time = models.DateTimeField()
+    done_date = models.DateTimeField()
+    score = models.FloatField()
+    weixin_open_id = models.CharField(max_length=50)
+    done = models.BooleanField()
+    exam_time = models.IntegerField()
+    passing_score = models.IntegerField()
+    name = models.CharField(max_length=100)
+    ss_count = models.IntegerField()
+    ms_count = models.IntegerField()
+    jm_count = models.IntegerField()
+
+    def __str__():
+        return self.name
+
+    class Meta:
+        db_table = 'ExamPapers'
+
+class ExamQuestions(models.Model):
+    exam_question_id = models.AutoField(primary_key=True)
+    question_id = models.ForeignKey(Questions, on_delete=models.CASCADE, db_column='question_id')
+    answers = models.CharField(max_length=255)
+    exam_paper_id = models.ForeignKey(ExamPapers, on_delete=models.CASCADE, db_column='exam_paper_id')
+    score = models.FloatField()
+    sn = models.IntegerField()
+
+    def __st__():
+        return 'The question id is:' + str(exam_question_id)
+
+    class Meta:
+        db_table = 'ExamQuestions'
+

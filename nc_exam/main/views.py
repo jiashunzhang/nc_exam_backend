@@ -1,7 +1,6 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Create your views here.
-
-import hashlib, os, requests, logging, calendar, datetime, math
+import hashlib, os, requests, logging, calendar, datetime, math, decimal
 import simplejson as json
 from lxml import etree
 from django.utils.encoding import smart_str
@@ -55,11 +54,14 @@ def login(request):
             return HttpResponse('{ \"errmsg\": \"%s\" }' % resp_obj['errmsg'], content_type='text/json')
         if 'openid' not in resp_obj:
             return HttpResponse('{ \"errmsg\": \"服务器返回异常。\" }', content_type='text/json')
+        if not resp_obj['openid']:
+            return HttpResponse('{ \"errmsg\": \"未能从腾讯获取用户微信ID。\" }', content_type='text/json')
 
         request.session['open_id'] = resp_obj['openid']
-
-        #if not Members.objects.filter(weixin_open_id=resp_obj['openid']).exists():
-        #   return HttpResponse('{ \"errmsg": \"nosuchmember\" }', content_type='text/json')
+        request.session.save()
+        if not Members.objects.filter(weixin_open_id=resp_obj['openid']).exists():
+            request.session['wx_session_key'] = resp_obj['session_key']
+            return HttpResponse('{ \"errmsg": \"nosuchmember\", \"my_session_key\": \"%s\" }' % request.session.session_key, content_type='text/json')
 
         if Members.objects.filter(Q(weixin_open_id=resp_obj['openid']), Q(deleted=True)).exists():
             return HttpResponse('{ \"errmsg": \"deletedmember\" }', content_type='text/json')
@@ -69,11 +71,10 @@ def login(request):
 
         mem = Members.objects.get(weixin_open_id=resp_obj['openid'])
 
-        request.session.save()
         request.session['wx_session_key'] = resp_obj['session_key']
         return HttpResponse('{ \"my_session_key\": \"%s\", \"mem_name\": \"%s\", \"mem_dep\": \"%s\", \"mem_wt\": \"%s\", \"mem_pos\": \"%s\" }' % (request.session.session_key, mem.name, mem.dep_id.dep_name, mem.work_type_id.type_name, mem.position_id.name), content_type='text/json')
     else:
-        return HttpResponse('{ \"errmsg\": \"服务嚣未返回code。\" }', content_type='text/json')
+        return HttpResponse('{ \"errmsg\": \"服务器未返回code。\" }', content_type='text/json')
 
 @csrf_exempt
 def ifNewUserLogin(request):
@@ -173,7 +174,7 @@ def getTestPapersByType(request):
             for p in papers:
                 ret.append({ 'max_score': 0, 'type_id': p.type_id.type_id, 'passed_time': 0, 'paper_id': p.paper_id, 'paper_name': p.paper_name, 'set_date': p.set_date.strftime('%Y年%m月%d日'), 'test_time': '无', 'passing_score': p.passing_score, 'test_count': 0, 'test_time': p.test_time })
 
-        return HttpResponse(json.dumps(ret))
+        return HttpResponse(json.dumps(ret, cls=DateTimeJSONEncoder))
     except Exception as e:
         return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
 
@@ -205,7 +206,7 @@ def getExamPapers(request):
         if not m:
             return HttpResponse('{ \"errmsg\": \"无此用户。\" }', content_type='text/json')
 
-        papers = ExamPapers.objects.filter(done=(False if done == '0' else True), weixin_open_id=m).order_by('-date_time' if done == '0' else '-done_date')
+        papers = ExamPapers.objects.filter(done=(False if done == '0' else True), weixin_open_id=woi)
         
         ret = list()
         for p in papers:
@@ -214,7 +215,7 @@ def getExamPapers(request):
                         'exam_paper_id': p.exam_paper_id,
                         'paper_name': p.name,
                         'set_date': p.date_time.strftime('%Y年%m月%d日'),
-                        'done_date': p.done_date.strftime('%Y年%m月%d日'),
+                        'done_date': p.done_date.strftime('%Y年%m月%d日') if p.done_date else '尚未考试',
                         'score': math.floor(p.score),
                         'ss_count': p.ss_count,
                         'ms_count': p.ms_count,
@@ -294,6 +295,7 @@ def getRandomExam(request):
         exam_paper = ExamPapers.objects.get(exam_paper_id=exam_paper_id)
         if not exam_paper:
             return HttpResponse('{ \"errmsg\": \"您无权参加此考试。\" }', content_type='text/json')
+        debugLog(exam_paper.done)
         if exam_paper.done:
             return HttpResponse('{ \"errmsg\": \"您已参加过此考试，请不要重复参考。\" }', content_type='text/json')
 
@@ -483,8 +485,8 @@ def handinExam(request):
             tq = ExamQuestions()
             ques = Questions.objects.get(question_id=q_id)
             tq.question_id = ques
-            tq.test_paper_id = exam_obj
-            tq.answers = q_ans
+            tq.exam_paper_id = exam_obj
+            tq.answers = q_ans.replace(',', '')
             q_count += 1
             tq.sn = q_count
 
@@ -498,11 +500,50 @@ def handinExam(request):
         total_score_100 = (total_score / q_count) * 100
         exam_obj.score = total_score_100
         exam_obj.done = True
+        exam_obj.done_date = datetime.datetime.now()
         exam_obj.save()
 
         return HttpResponse('{ \"errmsg\": \"OK\", \"score\": \"%f\", \"passing_score\": \"%f\"}' % (total_score_100, exam_obj.passing_score), content_type='text/json')
     except Exception as e:
         return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
+
+@csrf_exempt
+def getUndoneExamCount(request):
+    woi = request.session.get('open_id', None)
+    if not woi:
+        return HttpResponse('{ \"errmsg\": \"登录信息丢失。\" }', content_type='text/json')
+    try:
+        count = ExamPapers.objects.filter(weixin_open_id=woi, done=False).count()
+        return HttpResponse('{ \"count\": \"%d\" }' % (count,), content_type='text/json')
+    except Exception as e:
+        return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e))
+
+def safe_new_datetime(d):
+    kw = [d.year, d.month, d.day]
+    if isinstance(d, datetime.datetime):
+        kw.extend([d.hour, d.minute, d.second, d.microsecond, d.tzinfo])
+    return datetime.datetime(*kw)
+                        
+def safe_new_date(d):
+    return datetime.date(d.year, d.month, d.day)
+
+class DateTimeJSONEncoder(json.JSONEncoder):
+    DATE_FORMAT = '%Y-%m-%d'
+    TIME_FORMAT = '%H:%M:%S'
+
+    def default(self, o):
+        if isinstance(o, datetime.datetime):
+            d = safe_new_datetime(o)
+            return d.strftime('%s %s' % (self.DATE_FORMAT, self.TIME_FORMAT))
+        elif isinstance(o, datetime.date):
+            d = safe_new_date(o)
+            return d.strftime(self.DATE_FORMAT)
+        elif isinstance(o, datetime.time):
+            return o.strftime(self.TIME_FORMAT)
+        elif isinstance(o, decimal.Decimal):
+            return str(o)
+        else:
+            return super(DateTimeJSONEncoder, self).default(o)
 
 def dictfetchall(cursor):
     columns = [col[0] for col in cursor.description]

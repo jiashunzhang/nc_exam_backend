@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
 from django.db import models
 from datetime import date
 
@@ -98,7 +100,7 @@ class ExamPapers(models.Model):
     date_time = models.DateTimeField()
     done_date = models.DateTimeField()
     score = models.FloatField()
-    weixin_open_id = models.ForeignKey(Members, on_delete=models.CASCADE, db_column='weixin_open_id')
+    weixin_open_id = models.CharField(max_length=50)
     done = models.BooleanField()
     exam_time = models.IntegerField()
     passing_score = models.IntegerField()
@@ -146,7 +148,7 @@ class ExamQuestions(models.Model):
     exam_question_id = models.AutoField(primary_key=True)
     question_id = models.ForeignKey(Questions, on_delete=models.CASCADE, db_column='question_id')
     answers = models.CharField(max_length=255)
-    exam_paper_id = models.ForeignKey(ExamPapers, on_delete=models.CASCADE, db_column='test_paper_id')
+    exam_paper_id = models.ForeignKey(ExamPapers, on_delete=models.CASCADE, db_column='exam_paper_id')
     score = models.FloatField()
     sn = models.IntegerField()
 
