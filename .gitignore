@@ -5,3 +5,4 @@ lib64
 include/
 pip-selfcheck.json
 nc_exam/commonstatic/
+nc_exam/exam_admin/upload/
