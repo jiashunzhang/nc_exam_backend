@@ -3,7 +3,9 @@
     <head>
         <meta charset="UTF-8">
 
+        <title>南仓站微信考试管理</title>
         <link rel="stylesheet" href="https://unpkg.com/element-ui@2.4.1/lib/theme-chalk/index.css">
+        <link href="https://cdn.webfont.youziku.com/webfonts/nomal/117412/45803/5b4dea26f629d90a6c95141c.css" rel="stylesheet" type="text/css" />
         <style type="text/css">
             html, body {
                 margin: 0px;
@@ -27,9 +29,11 @@
                 align-items: center;
             }
             .top_banner_text {
-                font-family:'Lucida Grande', Lucida Sans Unicode, Hiragino Sans GB, WenQuanYi Micro Hei, VerDana, Aril, sans-serif;
-                font-size: 36px;
-                text-shadow: 0.1em 0.1em 0.2em black;
+                /*font-family:'Lucida Grande', Lucida Sans Unicode, Hiragino Sans GB, WenQuanYi Micro Hei, VerDana, Aril, sans-serif;*/
+                font-family: "LiDeBiao-Xing3134d83ee351caa4";
+                font-size: 40px;
+                /*text-shadow: 0.1em 0.1em 0.2em black;*/color: rgba(45, 137, 250, 0.6);
+                text-shadow: rgba(0, 0, 0, 0.2) 2px 6px 5px, rgba(255, 255, 255, 0.4) 0px -4px 30px;
             }
             .tops_frame_cells {
                 display: flex;
@@ -66,7 +70,7 @@
         <div id="app" style="width: 100%; height: 100%">
             <el-container style="height: 100%">
                 <el-header class="admin_banner" style="padding: 0px; background-image: url(./static/admin_top_banner.gif); background-size: 100% 100%; background-repeat: no-repeat">
-                    <span class="top_banner_text">考试管理</span>
+                    <span class="top_banner_text">南&nbsp;&nbsp;仓&nbsp;&nbsp;站&nbsp;&nbsp;微&nbsp;&nbsp;信&nbsp;&nbsp;考&nbsp;&nbsp;试&nbsp;&nbsp;管&nbsp;&nbsp;理</span>
                         {{ tops_date_range }}
                 </el-header>
                 <el-container>
@@ -398,7 +402,9 @@
                     mod_deleted: false,
                     mod_intro: "",
                     cur_row: {},
-                    loading: false
+                    loading: false,
+                    mod: true,
+                    mod_title: "人员修改"
                 };
             },
             mounted: function() {
@@ -471,7 +477,7 @@
                         return;
                     }
 
-                    if(this.mod_name == this.cur_row.name &&
+                    if(this.mod && this.mod_name == this.cur_row.name &&
                         this.mod_phone == this.cur_row.phone &&
                         this.mod_idcard == this.cur_row.idcard &&
                         this.mod_workshop == this.cur_row.ws_value &&
@@ -480,16 +486,18 @@
                         this.mod_intro == this.cur_row.intro &&
                         this.mod_three_new == (this.cur_row.three_new == "是") &&
                         this.mod_deleted == (this.cur_row.deleted == "是")) {
+                        alert("未修改。");
                         this.mod_dialog_visible = false;
                         return;
                     }
-                    v_requests(that, "modMember", function(result) {
+                    v_requests(that, this.mod ? "modMember" : "addMember", function(result) {
                         result.json().then(obj => {
                             if(obj.errmsg != "OK")
                                 throw obj.errmsg;
                             else {
-                                alert("修改成功。");
-                                that.onLookupList();
+                                alert((that.mod ? "修改" : "添加") + "成功。");
+                                if(that.mod)
+                                    that.onLookupList();
                                 that.mod_dialog_visible = false;
                             }
                         }).catch(err => {
@@ -507,11 +515,13 @@
                         idcard: that.mod_idcard,
                         position: that.mod_position,
                         three_new: (that.mod_three_new ? "1" : "0"),
-                        deleted: (that.deleted ? "1" : "0"),
+                        deleted: (that.mod_deleted ? "1" : "0"),
                         intro: that.mod_intro
                     });
                 },
                 handleEdit: function(index, row) {
+                    this.mod = true;
+                    this.mod_title = "人员修改";
                     this.cur_row = row;
                     this.mod_name = row.name;
                     this.mod_phone = row.phone;
@@ -520,13 +530,27 @@
                     this.mod_worktype = row.wt_value;
                     this.mod_position = row.pos_value;
                     this.mod_intro = row.intro;
-                    this.mod_three_new = (row.three_new === '是');
-                    this.mod_delete = (row.deleted === '是');
+                    this.mod_three_new = (row.three_new == '是');
+                    this.mod_deleted = (row.deleted == '是');
+                    this.mod_dialog_visible = true;
+                },
+                onAddMember: function() {
+                    this.mod = false;
+                    this.mod_title = "人员添加";
+                    this.mod_name = "";
+                    this.mod_phone = "";
+                    this.mod_idcard = "";
+                    this.mod_workshop = this.member_workshop_options[1].value;
+                    this.mod_worktype = this.member_worktype_options[1].value;
+                    this.mod_position = this.member_position_options[1].value;
+                    this.mod_intro = "";
+                    this.mod_three_new = true;
+                    this.mod_deleted = false;
                     this.mod_dialog_visible = true;
                 }
             },
             template: `
-                <table id="member_frame" style="width: 100%; height: 100%; border-width: 0px; border-collapse: collpase; padding: 0px; margin: 0px">
+                <table id="member_frame" style="width: 99%; height: 100%; border-width: 0px; border-collapse: collpase; padding: 0px; margin: 0px">
                     <tr style="height: 50px">
                         <td class="tops_frame_cells">
                             姓名：<el-input :disabled="loading" placeholder="请输入姓名" size="mini" clearable v-model="member_name" style="margin-right: 25px; width: 95px"></el-input>
@@ -558,6 +582,7 @@
                             </el-select>
                             <el-checkbox v-model="three_new" style="margin-right: 10px" :disabled="loading">三新</el-checkbox>
                             <el-button icon="el-icon-search" size="mini" type="primary" @click="onLookupList" :loading="loading">查找</el-button>
+                            <el-button icon="el-icon-circle-plus" size="mini" type="success" @click="onAddMember" :loading="loading">添加</el-button>
                         </td>
                     </tr>
                     <tr>
@@ -651,8 +676,8 @@
                             </el-table>
                             <el-dialog
                                 :visible.sync="mod_dialog_visible"
-                                title="人员修改"
-                                width="500px"
+                                :title="mod_title"
+                                width="510px"
                             >
                                 <table>
                                     <tr>
@@ -745,8 +770,6 @@
                     info_workshop_options: [],
                     info_worktype_options: [],
                     info_position_options: [],
-                    dialog_workshop: "",
-                    dialog_name: "",
                     dialog_paper_id: "",
                     missedDialogVisible: false,
                     missedData: [],
@@ -758,7 +781,8 @@
                     dialogHeight: 0,
                     window_resize_org: undefined,
                     dialog_d_value: 150,
-                    expandedRowsReal: (new Set())
+                    expandedRowsReal: (new Set()),
+                    loading: false
                 };
             },
             methods: {
@@ -776,6 +800,7 @@
                 },
                 onLookupList: function(event) {
                     var that = this;
+                    this.loading = true;
                     v_requests(this, "getInfoTreeTop", function(result) {
                         result.json().then(obj => {
                             if(obj.errmsg)
@@ -783,13 +808,11 @@
                             else{
                                 var data = [];
                                 for(var i in obj) {
-                                    var avg_score_str = (parseFloat(obj[i]["score_sum"]) / parseInt(obj[i]["examinee_count"])) + "";
-                                    var avg_score_s_str = avg_score_str.substring(0, (avg_score_str.indexOf(".") === -1 ? avg_score_str.length : avg_score_str.indexOf(".")));
                                     data.push({
                                         "paper_name": obj[i]["paper_name"],
                                         "rowId": obj[i]["paper_id"], 
                                         "examinee_count": obj[i]["examinee_count"],
-                                        "avg_score": avg_score_s_str,
+                                        "avg_score": Math.round(obj[i]["avg_score"]),
                                         "should_mem_count": obj[i]["should_mem_count"],
                                         "examinee_count": obj[i]["examinee_count"],
                                         "failed_count": obj[i]["failed_count"],
@@ -797,13 +820,18 @@
                                     });
                                 }
                                 that.tableData = data;
+                                that.$refs.info_table.$nextTick(function() {
+                                    that.loading = false;
+                                });
                                 console.log(JSON.stringify(that.tableData));
                             }
                         }).catch(err => {
                             alert(JSON.stringify(err));
+                            that.loading = false;
                         });
                     }, function(err) {
                         alert(JSON.stringify(err));
+                        that.loading = false;
                     }, {
                         "date_start": (that.paper_date_range.length == 2 ? that.paper_date_range[0] : ""),
                         "date_end": (that.paper_date_range.length == 2 ? that.paper_date_range[1] : ""),
@@ -811,48 +839,6 @@
                         "worktype": that.info_worktype,
                         "position": that.info_position
                     });
-                },
-                onMissedClicked: function(curRow) {
-                    var that = this;
-                    v_requests(this, "getMissedDetail", function(result) {
-                        result.json().then(obj => {
-                            if(obj.errmsg) {
-                                alert(obj.errmsg);
-                                return;
-                            }
-                            that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
-                            that.dialog_workshop = "";
-                            that.dialog_name = "";
-                            that.missedData = obj;
-                            that.missedDialogVisible = true;
-                            that.dialog_paper_id = curRow.rowId;
-                        }).catch(err => {
-                            alert(JSON.stringify(err));
-                        });
-                    }, function(err) {
-                        alert(JSON.stringify(err));
-                    }, { "paper_id": curRow.rowId });
-                },
-                onFailedClicked: function(curRow) {
-                    var that = this;
-                    v_requests(this, "getFailedDetail", function(result) {
-                        result.json().then(obj => {
-                            if(obj.errmsg) {
-                                alert(obj.errmsg);
-                                return;
-                            }
-                            that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
-                            that.dialog_workshop = "";
-                            that.dialog_name = "";
-                            that.failedData = obj;
-                            that.failedDialogVisible = true;
-                            that.dialog_paper_id = curRow.rowId;
-                        }).catch(err => {
-                            alert(JSON.stringify(err));
-                        });
-                    }, function(err) {
-                        alert(JSON.stringify(err));
-                    }, { "paper_id": curRow.rowId });
                 },
                 onScoreList: function(curRow) {
                     var that = this;
@@ -864,7 +850,6 @@
                             }
                             that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
                             that.dialog_workshop = "";
-                            that.dialog_name = "";
                             that.scoreData = obj.list;
                             that.scoreDialogVisible = true;
                             that.dialog_paper_id = curRow.rowId;
@@ -876,7 +861,7 @@
                         alert(JSON.stringify(err));
                     }, { "paper_id": curRow.rowId });
                 },
-                onMissedLookupList: function(event) {
+                onMissedLookupList: function(curRow) {
                     var that = this;
                     v_requests(this, "getMissedDetail", function(result) {
                         result.json().then(obj => {
@@ -892,9 +877,9 @@
                         });
                     }, function(err) {
                         alert(JSON.stringify(err));
-                    }, { "paper_id": that.dialog_paper_id, "name": that.dialog_name, "ws": that.dialog_workshop });
+                    }, { "paper_id": curRow.rowId, "workshop": that.info_workshop, "worktype": that.info_worktype, "position": that.info_position });
                 },
-                onFailedLookupList: function(event) {
+                onFailedLookupList: function(curRow) {
                     var that = this;
                     v_requests(this, "getFailedDetail", function(result) {
                         result.json().then(obj => {
@@ -910,9 +895,9 @@
                         });
                     }, function(err) {
                         alert(JSON.stringify(err));
-                    }, { "paper_id": that.dialog_paper_id, "name": that.dialog_name, "ws": that.dialog_workshop });
+                    }, { "paper_id": curRow.rowId, "workshop": that.info_workshop, "worktype": that.info_worktype, "position": that.info_position });
                 },
-                onScoreLookupList: function(event) {
+                onScoreLookupList: function(curRow) {
                     var that = this;
                     v_requests(this, "getScoreDetail", function(result) {
                         result.json().then(obj => {
@@ -921,11 +906,8 @@
                                 return;
                             }
                             that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
-                            if(obj.workshop_name)
-                                that.score_list_title = obj.workshop_name + that.dialog_name + "《" + obj.paper_name + "》成绩单";
-                            else
-                                that.score_list_title = ($.trim(that.dialog_name) == "" ? "全体成员" : that.dialog_name) + "《" + obj.paper_name + "》成绩单";
-                            that.scoreData = obj.list;
+                            that.score_list_title = obj.workshop_name + obj.worktype_name + obj.position_name + "《" + obj.paper_name + "》成绩单";
+                            that.scoreData = obj.data;
                             that.scoreDialogVisible = true;
 
                         }).catch(err => {
@@ -933,7 +915,7 @@
                         });
                     }, function(err) {
                         alert(JSON.stringify(err));
-                    }, { "paper_id": that.dialog_paper_id, "name": that.dialog_name, "ws": that.dialog_workshop });
+                    }, { "paper_id": curRow.rowId, "workshop": that.info_workshop, "worktype": that.info_worktype, "position": that.info_position });
                 },
                 onScoreListExport: function(event) {
                     var wb = XLSX.utils.table_to_book(document.querySelector("#score_list"));
@@ -994,9 +976,10 @@
                                 value-format="yyyy-MM-dd"
                                 size="mini"
                                 style="margin-right: 25px"
+                                :disabled="loading"
                             >
                             </el-date-picker>
-                            车间：<el-select size="mini" v-model="info_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
+                            车间：<el-select size="mini" :disabled="loading" v-model="info_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
                                 <el-option
                                     v-for="item in info_workshop_options"
                                     :key="item.value"
@@ -1004,7 +987,7 @@
                                     :value="item.value"
                                 ></el-option>
                             </el-select>
-                            工种：<el-select size="mini" v-model="info_worktype" placeholder="请选择工种" style="margin-right: 25px; width: 110px">
+                            工种：<el-select size="mini" :disabled="loading" v-model="info_worktype" placeholder="请选择工种" style="margin-right: 25px; width: 110px">
                                 <el-option
                                     v-for="item in info_worktype_options"
                                     :key="item.value"
@@ -1012,7 +995,7 @@
                                     :value="item.value"
                                 ></el-option>
                             </el-select>
-                            职名：<el-select size="mini" v-model="info_position" placeholder="请选择职名" style="margin-right: 25px; width: 110px">
+                            职名：<el-select size="mini" :disabled="loading" v-model="info_position" placeholder="请选择职名" style="margin-right: 25px; width: 110px">
                                 <el-option
                                     v-for="item in info_position_options"
                                     :key="item.value"
@@ -1020,7 +1003,7 @@
                                     :value="item.value"
                                 ></el-option>
                             </el-select>
-                            <el-button icon="el-icon-search" size="mini" type="primary" @click="onLookupList">查找</el-button>
+                            <el-button icon="el-icon-search" size="mini" type="primary" :loading="loading" @click="onLookupList">查找</el-button>
                         </td>
                     </tr>
                     <tr>
@@ -1030,6 +1013,11 @@
                                 :border="true"
                                 :show-header="true"
                                 stripe
+                                ref="info_table"
+                                v-loading="loading"
+                                element-loading-text="正在玩了命地加载……"
+                                element-loading-spinner="el-icon-loading"
+                                element-loading-background="rgba(0, 0, 0, 0, 0.8)"
                             >
                                 <el-table-column
                                     label="考试名称"
@@ -1057,7 +1045,7 @@
                                         <el-button
                                             type="text"
                                             size="medium"
-                                            @click="onMissedClicked(scope.row)"
+                                            @click="onMissedLookupList(scope.row)"
                                         >
                                             {% verbatim %}
                                             {{ scope.row.missed }}
@@ -1073,7 +1061,7 @@
                                         <el-button
                                             type="text"
                                             size="medium"
-                                            @click="onFailedClicked(scope.row)"
+                                            @click="onFailedLookupList(scope.row)"
                                         >
                                             {% verbatim %}
                                             {{ scope.row.failed_count }}
@@ -1094,7 +1082,7 @@
                                         <el-button
                                             type="primary"
                                             size="mini"
-                                            @click="onScoreList(scope.row)"
+                                            @click="onScoreLookupList(scope.row)"
                                         >
                                             成绩单
                                         </el-button>
@@ -1107,28 +1095,6 @@
                                 width="50%"
                                 title="缺考人员名单"
                             >
-                                <table>
-                                    <tr>
-                                        <td>
-                                            姓名：<el-input
-                                                    v-model="dialog_name"
-                                                    size="mini"
-                                                    placeholder="请输入姓名"
-                                                    style="margin-right: 25px; width: 100px"
-                                                  >
-                                                  </el-input>
-                                            车间：<el-select size="mini" v-model="dialog_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
-                                                <el-option
-                                                    v-for="item in info_workshop_options"
-                                                    :key="item.value"
-                                                    :label="item.label"
-                                                    :value="item.value"
-                                                ></el-option>
-                                            </el-select>
-                                            <el-button round icon="el-icon-search" size="mini" type="primary" @click="onMissedLookupList">查找</el-button>
-                                        </td>
-                                    </tr>
-                                </table>
                                 <el-table
                                     :data="missedData"
                                     :border="true"
@@ -1154,6 +1120,11 @@
                                         label="工种"
                                     >
                                     </el-table-column>
+                                    <el-table-column
+                                        prop="pos_name"
+                                        label="职名"
+                                    >
+                                    </el-table-column>
                                 </el-table>
                             </el-dialog>
                             <el-dialog
@@ -1162,28 +1133,6 @@
                                 width="50%"
                                 title="不及格人员名单"
                             >
-                                <table>
-                                    <tr>
-                                        <td>
-                                            姓名：<el-input
-                                                    v-model="dialog_name"
-                                                    size="mini"
-                                                    placeholder="请输入姓名"
-                                                    style="margin-right: 25px; width: 100px"
-                                                  >
-                                                  </el-input>
-                                            车间：<el-select size="mini" v-model="dialog_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
-                                                <el-option
-                                                    v-for="item in info_workshop_options"
-                                                    :key="item.value"
-                                                    :label="item.label"
-                                                    :value="item.value"
-                                                ></el-option>
-                                            </el-select>
-                                            <el-button round icon="el-icon-search" size="mini" type="primary" @click="onFailedLookupList">查找</el-button>
-                                        </td>
-                                    </tr>
-                                </table>
                                 <el-table
                                     :data="failedData"
                                     :border="true"
@@ -1209,6 +1158,16 @@
                                         label="工种"
                                     >
                                     </el-table-column>
+                                    <el-table-column
+                                        prop="pos_name"
+                                        label="职名"
+                                    >
+                                    </el-table-column>
+                                    <el-table-column
+                                        prop="score"
+                                        label="得分"
+                                    >
+                                    </el-table-column>
                                 </el-table>
                             </el-dialog>
                             <el-dialog
@@ -1217,35 +1176,11 @@
                                 width="50%"
                                 title="成绩单"
                             >
-                                <table>
-                                    <tr>
-                                        <td>
-                                            姓名：<el-input
-                                                    v-model="dialog_name"
-                                                    size="mini"
-                                                    placeholder="请输入姓名"
-                                                    style="margin-right: 25px; width: 100px"
-                                                  >
-                                                  </el-input>
-                                            车间：<el-select size="mini" v-model="dialog_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
-                                                <el-option
-                                                    v-for="item in info_workshop_options"
-                                                    :key="item.value"
-                                                    :label="item.label"
-                                                    :value="item.value"
-                                                ></el-option>
-                                            </el-select>
-                                            <el-button round icon="el-icon-search" size="mini" type="primary" @click="onScoreLookupList">查找</el-button>
-                                            <el-button round icon="el-icon-download" size="mini" type="primary" @click="onScoreListExport">导出</el-button>
-                                        </td>
-                                    </tr>
-                                </table>
                                 <el-table
                                     :data="scoreData"
                                     :border="true"
                                     :show-header="true"
                                     :height="dialogTableHeight"
-                                    :default-sort="{ prop: 'score', order: 'ascending' }"
                                     stripe
                                     id="score_list"
                                 >
@@ -1268,13 +1203,27 @@
                                         >
                                         </el-table-column>
                                         <el-table-column
+                                            prop="pos_name"
+                                            label="职名"
+                                        >
+                                        </el-table-column>
+                                        <el-table-column
                                             prop="score"
                                             label="得分"
                                             sortable
                                         >
                                         </el-table-column>
+                                        <el-table-column
+                                            prop="missed"
+                                            label="缺考"
+                                            sortable
+                                        >
+                                        </el-table-column>
                                     </el-table-column>
                                 </el-table>
+                                <div style="margin-top: 10px; width: 100%; display: flex; flex-direction: row; justify-content: flex-end">
+                                    <el-button icon="el-icon-download" size="mini" type="primary" @click="onScoreListExport">导出</el-button>
+                                </div>
                             </el-dialog>
                         </td>
                     </tr>
@@ -1328,8 +1277,29 @@
                 },
                 onPaperSelected: function(val) {
                     this.selected_papers.splice(0, this.selected_papers.length);
+                    var that = this;
                     for(var i in val)
                         this.selected_papers.push(val[i].key);
+
+                    function getRanges(c, pids) {
+                        v_requests(that, "getTopsComboDataByPaper", function(result) {
+                            result.json().then(obj => {
+                                if(obj.errmsg) 
+                                    throw obj.errmsg;
+                                if(obj.data) {
+                                    eval("that." + c + "s = obj.data");
+                                }
+                            }).catch(err => {
+                                alert(JSON.stringify(err));
+                            });
+                        }, function(err) {
+                            alert(JSON.stringify(err));
+                        }, { combo: c, paper_ids: that.selected_papers.join() });
+                    }
+                    getRanges("workshop");
+                    getRanges("worktype");
+                    getRanges("position");
+                    this.selectMembers();
                 },
                 onWorkTypeSelected: function(val) {
                     if(!this.worktypes_allow_change)
@@ -1547,14 +1517,16 @@
                 <table style="border-width: 0; width: 100%; height: 100%; border-collapse: collapse; padding: 0; margin: 0">
                     <tr>
                         <td style="display: flex; flex-direction: row; justify-content: center">
-                            <fieldset id="properties_group" style="border-radius: 25px; width: 100%; display: flex; flex-direction: row; justify-content: center">
+                            <fieldset id="properties_group" style="border-radius: 25px; width: 100%">
                                 <legend>设置试卷属性</legend>
-                                试卷名称：<el-input v-model="test_name" placeholder="在此输入试卷名称" size="mini" style="width: 200px"></el-input>
-                                考试时间：<el-input-number v-model="test_time" :max="180" :min="1" size="mini" style="width: 120px"></el-input-number>分钟&nbsp;&nbsp;&nbsp;&nbsp;
-                                及格分数：<el-input-number v-model="passing_score" :max="100" :min="0" size="mini" style="width: 120px"></el-input-number>&nbsp;&nbsp;&nbsp;&nbsp;
-                                单选题：<el-input-number v-model="test_ss_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
-                                多选题：<el-input-number v-model="test_ms_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
-                                判断题：<el-input-number v-model="test_jm_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
+                                <div style="width: 100%; display: flex; flex-direction: row; justify-content: center">
+                                    试卷名称：<el-input v-model="test_name" placeholder="在此输入试卷名称" size="mini" style="width: 200px"></el-input>
+                                    考试时间：<el-input-number v-model="test_time" :max="180" :min="1" size="mini" style="width: 120px"></el-input-number>分钟&nbsp;&nbsp;&nbsp;&nbsp;
+                                    及格分数：<el-input-number v-model="passing_score" :max="100" :min="0" size="mini" style="width: 120px"></el-input-number>&nbsp;&nbsp;&nbsp;&nbsp;
+                                    单选题：<el-input-number v-model="test_ss_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
+                                    多选题：<el-input-number v-model="test_ms_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
+                                    判断题：<el-input-number v-model="test_jm_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
+                                </div>
                             </fieldset>
                         </td>
                     </tr>
@@ -1703,8 +1675,10 @@
                     new_papertype_dialog_visible: false,
                     loading: false,
                     log_data: null,
+                    workshops: [],
                     worktypes: [],
                     positions: [],
+                    selected_workshops: [],
                     selected_worktypes: [],
                     selected_positions: []
                 };
@@ -1715,7 +1689,7 @@
                         alert("请将题库信息填写完整。");
                         return false;
                     }
-                    if(this.selected_worktypes.length <= 0 || this.selected_positions.length <= 0) {
+                    if(this.selected_worktypes.length <= 0 || this.selected_positions.length <= 0 || this.selected_workshops.length <= 0) {
                         if(!confirm("如果不选择题库的某一或全部适用范围， 则此范围将被视为全体成员。确认吗？"))
                             return false;
                     }
@@ -1762,6 +1736,11 @@
                             }, { type_name: new_paper_type_name });
                         }
                     }
+                },
+                onWorkShopSelected: function(val) {
+                    this.selected_workshops.splice(0, this.selected_workshops.length);
+                    for(var i in val)
+                        this.selected_workshops.push(val[i].value);
                 },
                 onWorkTypeSelected: function(val) {
                     this.selected_worktypes.splice(0, this.selected_worktypes.length);
@@ -1848,6 +1827,19 @@
                 }, function(err) {
                     alert(JSON.stringify(err));
                 }, { combo: "position" });
+                v_requests(that, "getTopsComboData", function(result) {
+                    result.json().then(obj => {
+                        if(obj.errmsg) 
+                            throw obj.errmsg;
+                        if(obj.data) {
+                            that.workshops = obj.data;
+                        }
+                    }).catch(err => {
+                        alert(JSON.stringify(err));
+                    });
+                }, function(err) {
+                    alert(JSON.stringify(err));
+                }, { combo: "workshop" });
             },
             template: `
                 <table style="border-width: 0; width: 100%; height: 100%; border-collapse: collapse; padding: 0; margin: 0">
@@ -1879,7 +1871,7 @@
                                 :before-upload="onBeforeUploadFile"
                                 :on-success="onUploadFileSuccess"
                                 :on-error="onUploadFileError"
-                                :data="{ 'paper_type': paper_type, 'paper_name': qb_name, 'passing_score': passing_score, 'test_time': test_time * 60 * 1000, 'worktypes': (selected_worktypes.length == worktypes.length ? '' : selected_worktypes.join()), 'positions': (selected_positions.length == positions.length ? '' : selected_positions.join()) }"
+                                :data="{ 'paper_type': paper_type, 'paper_name': qb_name, 'passing_score': passing_score, 'test_time': test_time * 60 * 1000, 'worktypes': (selected_worktypes.length == worktypes.length ? '' : selected_worktypes.join()), 'positions': (selected_positions.length == positions.length ? '' : selected_positions.join()), 'workshops': (selected_workshops.length == workshops.length ? '' : selected_workshops.join()) }"
                                 :limit="1"
                                 :disabled="loading"
                             >
@@ -1908,6 +1900,22 @@
                                         width="200px"
                                         prop="name"
                                     >
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+                            <div style="display: flex; flex-direction: column; margin-right: 40px">
+                                <span style="margin: 5px 0 5px 0">选择题库适用车间：</span>
+                                <el-table
+                                    :data="workshops"
+                                    height="500px"
+                                    style="width: 192px"
+                                    border
+                                    @selection-change="onWorkShopSelected"
+                                    ref="table_workshops"
+                                >
+                                    <el-table-column type="selection" width="40px">
+                                    </el-table-column>
+                                    <el-table-column prop="label" label="车间列表" width="150px">
                                     </el-table-column>
                                 </el-table>
                             </div>

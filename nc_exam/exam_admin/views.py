@@ -4,16 +4,16 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.db import connection
 from django.db.models import Q
-from exam_admin.models import Department, WorkType, ExamPapers, TestPapers, Members, Papers, PaperTypes, Position, Questions, PaperImportLog, PaperPositionRange, PaperWorkTypeRange
+from exam_admin.models import Department, WorkType, ExamPapers, TestPapers, Members, Papers, PaperTypes, Position, Questions, PaperImportLog, PaperPositionRange, PaperWorkTypeRange, PaperDepRange
 from django.http import HttpResponse
 from datetime import datetime
 from datetime import timedelta
-from django.db.models import Count, Sum, Max
+from django.db.models import Count, Sum, Max, Avg
 from functools import reduce
 from openpyxl import load_workbook, Workbook
 
 import simplejson as json
-import logging, os, sys, operator
+import logging, os, sys, operator, uuid
 # Create your views here.
 def admin(request):
     return render(request, 'admin_main.html')
@@ -22,7 +22,7 @@ def admin(request):
 def getTopsComboData(request):
     combo = request.POST.get('combo', None)
     if not combo:
-        return HttpResponse('{ \"errmsg\": \"%s\" }' % combo, content_type='text/json');
+        return HttpResponse('{ \"errmsg\": \"%s\" }' % combo, content_type='text/json')
 
     ret_list = list()
     try:
@@ -39,6 +39,50 @@ def getTopsComboData(request):
         return HttpResponse(json.dumps({ 'data': ret_list }), content_type='text/json')
     except Exception as e:
         return HttpResponse('{ \"errmsg\": \"无法获取列表：%s\" }' % str(e), content_type='text/json')
+
+@csrf_exempt
+def getTopsComboDataByPaper(request):
+    combo = request.POST.get('combo', None)
+    paper_ids = request.POST.get('paper_ids', '')
+    if not combo:
+        return HttpResponse('{ \"errmsg\": \"%s\" }' % combo, content_type='text/json')
+    
+    pid_arr = paper_ids.split(',')
+
+    ret_list = list()
+    try:
+        if combo == 'workshop':
+            if paper_ids != '':
+                deps = PaperDepRange.objects.filter(paper_id__in=pid_arr).values_list('dep_id')
+                deps_in_dep = Department.objects.filter(level__lt=7, dep_id__in=deps).order_by('level')
+            else:
+                deps_in_dep = Department.objects.all();
+
+            for dep in deps_in_dep:
+                ret_list.append({ 'value': dep.dep_id, 'label': dep.dep_name })
+        elif combo == 'worktype':
+            if paper_ids != '':
+                wts = PaperWorkTypeRange.objects.filter(paper_id__in=pid_arr).values_list('work_type_id')
+                wts_in_wt = WorkType.objects.filter(work_type_id__in=wts).order_by('work_type_id')
+            else:
+                wts_in_wt = WorkType.objects.all()
+
+            for wt in wts_in_wt:
+                ret_list.append({ 'value': wt.work_type_id, 'label': wt.type_name })
+        elif combo == 'position':
+            if paper_ids != '':
+                poss = PaperPositionRange.objects.filter(paper_id__in=pid_arr).values_list('position_id')
+                poss_in_pos = Position.objects.filter(position_id__in=poss).order_by('position_id')
+            else:
+                poss_in_pos = Position.objects.all()
+
+            for pos in poss_in_pos:
+                ret_list.append({ 'value': pos.position_id, 'label': pos.name })
+
+        return HttpResponse(json.dumps({ 'data': ret_list }), content_type='text/json')
+    except Exception as e:
+        return HttpResponse('{ \"errmsg\": \"无法获取列表：%s\" }' % str(e), content_type='text/json')
+
 @csrf_exempt
 def getTopsList(request):
     workshop = request.POST.get('workshop', None)
@@ -185,60 +229,49 @@ def getInfoTreeTop(request):
 
     try:
         conds = list()
+        paper_conds = list()
         if start and end and start != '' and end != '':
-            conds.append(Q(date_time__gte=start) & Q(date_time__lte=end))
+            paper_conds.apend(Q(date_time__gte=start) & Q(date_time__lte=end))
 
         if ws and ws != '':
-            workshop = Department.objects.filter(dep_id=int(ws)).exists()
-            if workshop.exists():
-                workshop = Department.objects.get(dep_id=int(ws))
-                conds.append(Q(weixin_open_id__in=Members.objects.filter(dep_id=workshop)))
+            if Department.objects.filter(dep_id=int(ws)).exists():
+                conds.append(Q(dep_id=int(ws)))
             else:
                 return HttpResponse("{ \"errmsg\": \"车间不存在。\" }", content_type='text/json')
 
         if wt and wt != '':
-            worktype = WorkType.objects.filter(work_type_id=int(wt)).exists()
-            if worktype:
-                worktype = WorkType.objects.get(work_type_id=int(wt))
-                conds.append(Q(weixin_open_id__work_type_id=worktype))
+            if WorkType.objects.filter(work_type_id=int(wt)).exists():
+                conds.append(Q(work_type_id=int(wt)))
             else:
                 return HttpResponse("{ \"errmsg\": \"工种不存在。\" }", content_type='text/json')
 
         if pos and pos != '':
-            position = Position.objects.filter(position_id=int(pos)).exists()
-            if position:
-                position = Position.objects.get(position_id=int(pos))
-                conds.append(Q(weixin_open_id__position_id=position))
+            if Position.objects.filter(position_id=int(pos)).exists():
+                conds.append(Q(position_id=int(pos)))
             else:
                 return HttpResponse("{ \"errmsg\": \"岗位不存在。\" }", content_type='text/json')
 
+        conds.append(Q(verified=True) & Q(deleted=False) & Q(weixin_open_id__isnull=False) & (~Q(weixin_open_id='')))
         ret = list()
-        if len(conds) == 0:
-            papers = ExamPapers.objects\
-                .all()\
-                .values('paper_id')\
-                .annotate(examinee_count=Count('weixin_open_id'), score_sum=Sum('score'))\
-                .values('paper_id', 'examinee_count', 'score_sum')
-        else:
-            papers = ExamPapers.objects\
-                .select_related()\
-                .filter(reduce(operator.and_, conds))\
-                .values('paper_id')\
-                .annotate(examinee_count=Count('weixin_open_id'), score_sum=Sum('score'))\
-                .values('paper_id', 'examinee_count', 'score_sum')
+        members = Members.objects.filter(reduce(operator.and_, conds)).values_list('weixin_open_id', flat=True)
+        papers = ExamPapers.objects\
+            .filter(weixin_open_id__in=members)\
+            .values('paper_id')\
+            .annotate(exam_count=Count('exam_paper_id'))\
+            .values('paper_id', 'exam_count', 'name', 'passing_score')
             
         for p in papers:
-            paper = Papers.objects.get(paper_id=p['paper_id'])
-            wt = paper.work_type_id
-            should_mem_count = Members.objects.extra(select={ 'should_mem_count': 'select count(*) from Members where work_type_id=\'' + str(wt.work_type_id) + '\' and ifnull(weixin_open_id, \'\')<>\'\'' })
-            failed_count = ExamPapers.objects.filter(paper_id=paper, score__lt=paper.passing_score, if_exam=True).aggregate(failed=Count('weixin_open_id'))
+            should_mem_count = p['exam_count']
+            examinee_count = ExamPapers.objects.filter(weixin_open_id__in=members, paper_id=p['paper_id'], done=True).count()
+            avg_score = ExamPapers.objects.filter(weixin_open_id__in=members, paper_id=p['paper_id'], done=True).aggregate(avg_score=Avg('score'))
+            failed_count = ExamPapers.objects.filter(weixin_open_id__in=members, paper_id=p['paper_id'], score__lt=p['passing_score'], done=True).aggregate(failed=Count('exam_paper_id'))
             ret.append({\
                 'paper_id': p['paper_id'],\
-                        'paper_name': paper.paper_name,\
-                'examinee_count': p['examinee_count'],\
-                'score_sum': p['score_sum'],\
-                'should_mem_count': should_mem_count[0].should_mem_count,\
-                'failed_count': failed_count['failed']
+                'paper_name': p['name'],\
+                'examinee_count': examinee_count,\
+                'should_mem_count': should_mem_count,\
+                'failed_count': failed_count['failed'],\
+                'avg_score': avg_score['avg_score']
             })
         
         return HttpResponse(json.dumps(ret), content_type='text/json')
@@ -248,73 +281,162 @@ def getInfoTreeTop(request):
 @csrf_exempt
 def getMissedDetail(request):
     p_id = request.POST.get('paper_id', None)
-    ws_id = request.POST.get('ws', '')
-    mem_name = request.POST.get('name', '')
+    ws_id = request.POST.get('workshop', '')
+    wt_id = request.POST.get('worktype', '')
+    pos_id = request.POST.get('position', '')
 
     if not p_id:
         return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
 
-    try:
-        paper = Papers.objects.get(paper_id=p_id)
-        if not paper:
-            return HttpResponse('{ \"errmsg\": \"未找到题库。\" }', content_type='text/json')
-        wt_id = paper.work_type_id.work_type_id
+    mem_conds = list()
+    if ws_id != '':
+        mem_conds.append(Q(dep_id=int(ws_id)))
+    if wt_id != '':
+        mem_conds.append(Q(work_type_id=int(wt_id)))
+    if pos_id != '':
+        mem_conds.append(Q(position_id=int(pos_id)))
 
-        cursor = connection.cursor()
-        cursor.execute('select * from Members m left join Department d on m.dep_id=d.dep_id left join WorkType w on m.work_type_id=w.id where m.weixin_open_id not in(select distinct weixin_open_id from TestPapers where paper_id=\'%s\' and if_exam=1) and m.work_type_id=\'%s\' and m.name like \'%%%s%%\' and m.dep_id like \'%%%s%%\' and ifnull(m.weixin_open_id, \'\')<> \'\' order by d.dep_id, m.name' % (p_id, wt_id, mem_name, ws_id))
-        mems = dictfetchall(cursor)
-        return HttpResponse(json.dumps(mems), content_type='text/json')
+    mem_conds.append(Q(verified=True) & Q(deleted=False) & Q(weixin_open_id__isnull=False) & (~Q(weixin_open_id='')))
+    try:
+        ret = list()
+        mems = Members.objects.filter(reduce(operator.and_, mem_conds)).order_by('dep_id', 'work_type_id', 'position_id').values_list('weixin_open_id', flat=True)
+        papers = ExamPapers.objects.filter(paper_id=p_id, done=False, weixin_open_id__in=mems)
+
+        for p in papers:
+            if not Members.objects.filter(weixin_open_id=p.weixin_open_id).exists():
+                continue
+
+            mem = Members.objects.get(weixin_open_id=p.weixin_open_id)
+            ret.append({
+                'name': mem.name,
+                'dep_name': mem.dep_id.dep_name,
+                'type_name': mem.work_type_id.type_name,
+                'pos_name': mem.position_id.name
+            })
+
+        return HttpResponse(json.dumps(ret), content_type='text/json')
     except Exception as e:
         return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
 
 @csrf_exempt
 def getFailedDetail(request):
     p_id = request.POST.get('paper_id', None)
-    ws_id = request.POST.get('ws', '')
-    mem_name = request.POST.get('name', '')
+    ws_id = request.POST.get('workshop', '')
+    wt_id = request.POST.get('worktype', '')
+    pos_id = request.POST.get('position', '')
 
     if not p_id:
         return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
 
-    try:
-        paper = Papers.objects.get(paper_id=p_id)
-        if not paper:
-            return HttpResponse('{ \"errmsg\": \"未找到题库。\" }', content_type='text/json')
-        wt_id = paper.work_type_id.work_type_id
+    mem_conds = list()
+    if ws_id != '':
+        mem_conds.append(Q(dep_id=int(ws_id)))
+    if wt_id != '':
+        mem_conds.append(Q(work_type_id=int(wt_id)))
+    if pos_id != '':
+        mem_conds.append(Q(position_id=int(pos_id)))
 
-        cursor = connection.cursor()
-        sql = 'select * from Members m left join Department d on m.dep_id=d.dep_id left join WorkType w on m.work_type_id=w.id where m.weixin_open_id in(select distinct weixin_open_id from TestPapers where paper_id=\'%s\' and score<%s and if_exam=1)  and m.name like \'%%%s%%\' and m.dep_id like \'%%%s%%\' and ifnull(m.weixin_open_id, \'\')<>\'\' order by d.dep_id, m.name' % (p_id, paper.passing_score, mem_name, ws_id)
-        cursor.execute(sql)
-        mems = dictfetchall(cursor)
-        return HttpResponse(json.dumps(mems), content_type='text/json')
+    mem_conds.append(Q(verified=True) & Q(deleted=False) & Q(weixin_open_id__isnull=False) & (~Q(weixin_open_id='')))
+    try:
+        ret = list()
+        mems = Members.objects.filter(reduce(operator.and_, mem_conds)).order_by('dep_id', 'work_type_id', 'position_id').values_list('weixin_open_id', flat=True)
+        papers = ExamPapers.objects.filter(paper_id=p_id, weixin_open_id__in=mems, done=True)
+
+        for p in papers:
+            if (not Members.objects.filter(weixin_open_id=p.weixin_open_id).exists()) or (p.score >= p.passing_score):
+                continue
+
+            mem = Members.objects.get(weixin_open_id=p.weixin_open_id)
+            ret.append({
+                'name': mem.name,
+                'dep_name': mem.dep_id.dep_name,
+                'type_name': mem.work_type_id.type_name,
+                'pos_name': mem.position_id.name,
+                'score': p.score
+            })
+
+        return HttpResponse(json.dumps(ret), content_type='text/json')
     except Exception as e:
         return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
 
 @csrf_exempt
 def getScoreDetail(request):
     p_id = request.POST.get('paper_id', None)
-    ws_id = request.POST.get('ws', '')
-    mem_name = request.POST.get('name', '')
+    ws_id = request.POST.get('workshop', '')
+    wt_id = request.POST.get('worktype', '')
+    pos_id = request.POST.get('position', '')
 
     if not p_id:
         return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
 
+    mem_conds = list()
+    if ws_id != '':
+        #mem_conds.append(Q(dep_id=int(ws_id)))
+        ws_cond = ' and m.dep_id=' + ws_id
+    else:
+        ws_cond = ''
+
+    if wt_id != '':
+        #mem_conds.append(Q(work_type_id=int(wt_id)))
+        wt_cond = ' and m.work_type_id=' + wt_id
+    else:
+        wt_cond = ''
+
+    if pos_id != '':
+        #mem_conds.append(Q(position_id=int(pos_id)))
+        pos_cond = ' and m.position_id=' + pos_id
+    else:
+        pos_cond = ''
+
+    #mem_conds.append(Q(verified=True) & Q(deleted=False) & Q(weixin_open_id__isnull=False) & (~Q(weixin_open_id='')))
     try:
-        paper = Papers.objects.get(paper_id=p_id)
-        if not paper:
-            return HttpResponse('{ \"errmsg\": \"未找到题库。\" }', content_type='text/json')
-        wt_id = paper.work_type_id.work_type_id
+        data = list()
+        #mems = Members.objects.filter(reduce(operator.and_, mem_conds)).order_by('dep_id', 'work_type_id', 'position_id').values_list('weixin_open_id', flat=True)
+        #papers = ExamPapers.objects.filter(paper_id=p_id, weixin_open_id__in=mems)
+        
+        papers = ExamPapers.objects.raw('select ep.exam_paper_id, ep.done, ep.paper_id, ep.name, ep.weixin_open_id, ep.score from ExamPapers ep inner join Members m on ep.weixin_open_id=m.weixin_open_id and ifnull(m.weixin_open_id, \'\')<>\'\' and m.verified=1 and m.deleted=0 where ep.paper_id=\'' + p_id + '\'' + ws_cond + wt_cond + pos_cond + ' order by m.dep_id, m.work_type_id, m.position_id')
+        papers_arr = list(papers)
+        if papers is not None and len(papers_arr) > 0:
+            paper_name = papers_arr[0].name
+        else:
+            paper_name = ''
 
-        cursor = connection.cursor()
-        cursor.execute('select m.name, w.type_name, d.dep_name, tests.score from Members m left join Department d on m.dep_id=d.dep_id left join WorkType w on m.work_type_id=w.id left join TestPapers tests on m.weixin_open_id=tests.weixin_open_id and tests.paper_id=\'%s\' and tests.if_exam=1 where m.weixin_open_id in(select distinct weixin_open_id from TestPapers where paper_id=\'%s\' and if_exam=1) and m.name like \'%%%s%%\' and m.dep_id like \'%%%s%%\' order by d.dep_id, m.name' % (p_id, p_id,  mem_name, ws_id))
-        mems = dictfetchall(cursor)
+        for p in papers:
+            if not Members.objects.filter(weixin_open_id=p.weixin_open_id).exists():
+                continue
 
-        ret = dict()
-        if ws_id != '':
-            ws = Department.objects.get(dep_id=ws_id)
-            ret['workshop_name'] = ws.dep_name
-        ret['paper_name'] = paper.paper_name
-        ret['list'] = mems
+            mem = Members.objects.get(weixin_open_id=p.weixin_open_id)
+            data.append({
+                'name': mem.name,
+                'dep_name': mem.dep_id.dep_name,
+                'type_name': mem.work_type_id.type_name,
+                'pos_name': mem.position_id.name,
+                'score': p.score,
+                'missed': ('是' if p.done == False else '')
+            })
+
+        if ws_id != '' and Department.objects.filter(dep_id=int(ws_id)).exists():
+            ws_name = Department.objects.get(dep_id=int(ws_id)).dep_name
+        else:
+            ws_name = ''
+
+        if wt_id != '' and WorkType.objects.filter(work_type_id=int(wt_id)).exists():
+            wt_name = WorkType.objects.filter(work_type_id=int(wt_id)).type_name
+        else:
+            wt_name = ''
+
+        if pos_id != '' and Position.objects.filter(position_id=int(pos_id)).exists():
+            pos_name = Position.objects.filter(work_type_id=int(pos_id)).name
+        else:
+            pos_name = ''
+
+        ret = {
+            'workshop_name': ws_name,
+            'worktype_name': wt_name,
+            'position_name': pos_name,
+            'paper_name': paper_name,
+            'data': data
+        }
         return HttpResponse(json.dumps(ret), content_type='text/json')
     except Exception as e:
         return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
@@ -406,7 +528,7 @@ def createExams(request):
 
     try:
         with connection.cursor() as cursor:
-            cursor.callproc('CommitExam', (paper_ids, ws, wt, pos, mems, test_time, passing_score, test_name, test_ss_count, test_ms_count, test_jm_count))
+            cursor.callproc('CommitExam', (paper_ids, ws, wt, pos, mems, test_time, passing_score, test_name, test_ss_count, test_ms_count, test_jm_count, str(uuid.uuid1())))
 
         return HttpResponse('{ \"errmsg\": \"OK\" }', content_type='text/json')
     except Exception as e:
@@ -420,7 +542,7 @@ def uploadQuestionLibraryFile(request):
     test_time = request.POST.get('test_time', '')
     worktypes = request.POST.get('worktypes', '')
     positions = request.POST.get('positions', '')
-
+    workshops = request.POST.get('workshops', '')
     f = request.FILES.get('file')
 
     if paper_type == '' or paper_name == '' or passing_score == '' or test_time == '' or not f:
@@ -455,7 +577,7 @@ def uploadQuestionLibraryFile(request):
             new_ques.question_title = ws.cell(row=i, column=3).value
             new_ques.question_sn = ws.cell(row=i, column=1).value
             new_ques.question_type = ws.cell(row=i, column=2).value
-            if ws.cell(row=i, column=2).value.strip() == '3':
+            if str(ws.cell(row=i, column=2).value).strip() == '3':
                 new_ques.question_answer_texts = '%s|%s' % (ws.cell(row=i, column=4).value, ws.cell(row=i, column=5).value)
             else:
                 new_ques.question_answer_texts = '%s|%s|%s|%s' % (ws.cell(row=i, column=4).value, ws.cell(row=i, column=5).value, ws.cell(row=i, column=6).value, ws.cell(row=i, column=7).value)
@@ -467,6 +589,7 @@ def uploadQuestionLibraryFile(request):
 
         wt_arr = worktypes.split(',')
         pos_arr = positions.split(',')
+        ws_arr = workshops.split(',')
 
         n_p_id = new_paper.paper_id
 
@@ -515,6 +638,29 @@ def uploadQuestionLibraryFile(request):
                 new_pos_map.paper_id = new_paper
                 new_pos_map.position_id = Position.objects.get(position_id=p)
                 new_pos_map.save()
+
+        if workshops == '':
+            wss = Department.objects.all()
+            for ws in wss:
+                if PaperDepRange.objects.filter(dep_id=ws, paper_id=n_p_id).exists():
+                    continue
+
+                new_ws_map = PaperDepRange()
+                new_ws_map.paper_id = new_paper
+                new_ws_map.dep_id = ws
+                new_ws_map.save()
+        else:
+            for ws in ws_arr:
+                if not Department.objects.filter(dep_id=ws).exists():
+                    continue
+
+                if PaperDepRange.objects.select_related("dep_id").filter(dep_id=ws, paper_id=n_p_id).exists():
+                    continue
+
+                new_ws_map = PaperDepRange()
+                new_ws_map.paper_id = new_paper
+                new_ws_map.dep_id = Department.objects.get(dep_id=ws)
+                new_ws_map.save()
 
         return HttpResponse('{ \"errmsg\": \"OK\" }', content_type='text/json')
     except Exception as e:
@@ -704,7 +850,7 @@ def modMember(request):
     three_new = request.POST.get('three_new', '0')
     intro = request.POST.get('intro', '')
 
-    if name == '' or ws_id == '' or wt_id == '' or pos_id == '':
+    if name == '' or ws_id == '' or wt_id == '' or pos_id == '' or idcard == '':
         return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
 
     try:
@@ -727,6 +873,51 @@ def modMember(request):
         mem.idcard = idcard
         mem.dep_id = ws
         mem.work_type_id =wt
+        mem.position_id = pos
+        mem.deleted = (False if deleted == '0' else True)
+        mem.three_new = (False if three_new == '0' else True)
+        mem.intro = intro
+        mem.save()
+
+        return HttpResponse('{ \"errmsg\": \"OK\" }', content_type='text/json')
+    except Exception as e:
+        return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
+
+@csrf_exempt
+def addMember(request):
+    name = request.POST.get('name', '')
+    phone = request.POST.get('phone', '')
+    idcard = request.POST.get('idcard', '')
+    ws_id = request.POST.get('workshop', '')
+    wt_id = request.POST.get('worktype', '')
+    pos_id = request.POST.get('position', '')
+    deleted = request.POST.get('deleted', '0')
+    three_new = request.POST.get('three_new', '0')
+    intro = request.POST.get('intro', '')
+
+    if name == '' or ws_id == '' or wt_id == '' or pos_id == '' or idcard == '':
+        return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
+
+    try:
+        if not Department.objects.filter(dep_id=ws_id).exists():
+            return HttpResponse('{ \"errmsg\": \"车间不存在。\" }', content_type='text/json')
+        if not WorkType.objects.filter(work_type_id=wt_id).exists():
+            return HttpResponse('{ \"errmsg\": \"工种不存在。\" }', content_type='text/json')
+        if not Position.objects.filter(position_id=pos_id).exists():
+            return HttpResponse('{ \"errmsg\": \"职名不存在。\" }', content_type='text/json')
+        if Members.objects.filter(idcard=idcard).exists():
+            return HttpResponse('{ \"errmsg\": \"用户已存在。\" }', content_type='text/json')
+
+        ws = Department.objects.get(dep_id=ws_id)
+        wt = WorkType.objects.get(work_type_id=wt_id)
+        pos = Position.objects.get(position_id=pos_id)
+        mem = Members()
+        
+        mem.name = name
+        mem.phone = phone
+        mem.idcard = idcard
+        mem.dep_id = ws
+        mem.work_type_id = wt
         mem.position_id = pos
         mem.deleted = (False if deleted == '0' else True)
         mem.three_new = (False if three_new == '0' else True)

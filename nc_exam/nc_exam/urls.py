@@ -43,6 +43,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('exam_admin', admin_views.admin),
     path('getTopsComboData', admin_views.getTopsComboData),
+    path('getTopsComboDataByPaper', admin_views.getTopsComboDataByPaper),
     path('getTopsList', admin_views.getTopsList),
     path('getMembers', admin_views.getMembers),
     path('getInfoTreeTop', admin_views.getInfoTreeTop),
@@ -60,5 +61,6 @@ urlpatterns = [
     path('newPaperType', admin_views.newPaperType),
     path('deletePaperType', admin_views.deletePaperType),
     path('modMember', admin_views.modMember),
+    path('addMember', admin_views.addMember),
     path('getPaperImportLog', admin_views.getPaperImportLog)
 ]

@@ -133,6 +133,13 @@ class PaperImportLog(models.Model):
     class Meta:
         db_table = 'PaperImportLog'
 
+class PaperDepRange(models.Model):
+    paper_id = models.ForeignKey(Papers, on_delete=models.CASCADE, db_column='paper_id')
+    dep_id = models.ForeignKey(Department, on_delete=models.CASCADE, db_column='dep_id')
+
+    class Meta:
+        db_table = 'PaperDepRange'
+
 class PaperPositionRange(models.Model):
     paper_id = models.ForeignKey(Papers, on_delete=models.CASCADE, db_column='paper_id')
     position_id = models.ForeignKey(Position, on_delete=models.CASCADE, db_column='position_id')
@@ -161,6 +168,7 @@ class ExamPapers(models.Model):
     ss_count = models.IntegerField()
     ms_count = models.IntegerField()
     jm_count = models.IntegerField()
+    paper_id = models.CharField(max_length=36)
 
     def __str__():
         return self.name
