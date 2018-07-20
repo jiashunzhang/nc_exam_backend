@@ -127,20 +127,20 @@ def getMyPaperTypes(request):
             cursor.callproc('get_paper_type_by_user', (request.session['open_id'], False if if_exam == '0' else True))
             ret = dictfetchall(cursor)
 
-        if not ret:
-            ret = list()
-            pts = PaperTypes.objects.all()
-            for pt in pts:
-                m = Members.objects.get(weixin_open_id=woi)
-                if not m:
-                    return HttpResponse('{ \"errmsg\": \"没有此用户。\" }', content_type='text/json')
+        #if not ret:
+        #    ret = list()
+        #    pts = PaperTypes.objects.all()
+        #    for pt in pts:
+        #        m = Members.objects.get(weixin_open_id=woi)
+        #        if not m:
+        #            return HttpResponse('{ \"errmsg\": \"没有此用户。\" }', content_type='text/json')
 
-                paper_count = Papers.objects.filter(type_id=pt).count()
-                ret.append({ 'type_name': pt.name, 'max_score': 0, 'paper_count': paper_count, 'weixin_open_id': m.weixin_open_id, 'type_id': pt.type_id })
+        #        paper_count = Papers.objects.filter(type_id=pt).count()
+        #        ret.append({ 'type_name': pt.name, 'max_score': 0, 'paper_count': paper_count, 'weixin_open_id': m.weixin_open_id, 'type_id': pt.type_id })
 
         return HttpResponse(json.dumps(ret))
     except Exception as e:
-        return HttpResopnse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
+        return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
 
 @csrf_exempt
 def getTestPapersByType(request):
