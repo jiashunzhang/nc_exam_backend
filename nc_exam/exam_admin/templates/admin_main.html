@@ -466,7 +466,7 @@
                         workshop: that.member_workshop,
                         worktype: that.member_worktype,
                         idcard: that.member_idcard,
-                        postion: that.member_position,
+                        position: that.member_position,
                         three_new: (that.three_new ? "1" : "0")
                     });
                 },
@@ -779,6 +779,7 @@
                     scoreData: [],
                     score_list_title: "",
                     dialogHeight: 0,
+                    main_table_height: 0,
                     window_resize_org: undefined,
                     dialog_d_value: 150,
                     expandedRowsReal: (new Set()),
@@ -819,6 +820,7 @@
                                         "missed": parseInt(obj[i]["should_mem_count"]) - parseInt(obj[i]["examinee_count"])
                                     });
                                 }
+                                that.main_table_height = $("main.el-main").height() - 60;
                                 that.tableData = data;
                                 that.$refs.info_table.$nextTick(function() {
                                     that.loading = false;
@@ -1012,6 +1014,7 @@
                                 :data="tableData"
                                 :border="true"
                                 :show-header="true"
+                                :height="main_table_height"
                                 stripe
                                 ref="info_table"
                                 v-loading="loading"

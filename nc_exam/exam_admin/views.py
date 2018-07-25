@@ -190,7 +190,7 @@ def getMembers(request):
         if worktype != '':
             conds.append(Q(work_type_id=m_worktype))
         if position != '':
-            conds.append(Q(postion_id=m_position))
+            conds.append(Q(position_id=m_position))
         
         conds.append(Q(three_new=(True if threenew == '1' else False)))
 
@@ -231,7 +231,9 @@ def getInfoTreeTop(request):
         conds = list()
         paper_conds = list()
         if start and end and start != '' and end != '':
-            paper_conds.apend(Q(date_time__gte=start) & Q(date_time__lte=end))
+            start = start + ' 00:00:00'
+            end = end + ' 23:59:59'
+            paper_conds.append(Q(date_time__gte=start) & Q(date_time__lte=end))
 
         if ws and ws != '':
             if Department.objects.filter(dep_id=int(ws)).exists():
@@ -255,7 +257,7 @@ def getInfoTreeTop(request):
         ret = list()
         members = Members.objects.filter(reduce(operator.and_, conds)).values_list('weixin_open_id', flat=True)
         papers = ExamPapers.objects\
-            .filter(weixin_open_id__in=members)\
+            .filter(weixin_open_id__in=members).filter(reduce(operator.and_, paper_conds))\
             .values('paper_id')\
             .annotate(exam_count=Count('exam_paper_id'))\
             .values('paper_id', 'exam_count', 'name', 'passing_score')
