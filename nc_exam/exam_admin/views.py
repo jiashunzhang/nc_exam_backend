@@ -868,10 +868,10 @@ def modMember(request):
         ws = Department.objects.get(dep_id=ws_id)
         wt = WorkType.objects.get(work_type_id=wt_id)
         pos = Position.objects.get(position_id=pos_id)
+
         mem = Members.objects.get(idcard=idcard)
-        
         mem.name = name
-        mem.phone = phone
+        mem.phone_number = phone
         mem.idcard = idcard
         mem.dep_id = ws
         mem.work_type_id =wt
