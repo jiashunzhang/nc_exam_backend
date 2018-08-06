@@ -206,7 +206,7 @@ def getExamPapers(request):
         if not m:
             return HttpResponse('{ \"errmsg\": \"无此用户。\" }', content_type='text/json')
 
-        papers = ExamPapers.objects.filter(done=(False if done == '0' else True), weixin_open_id=woi)
+        papers = ExamPapers.objects.filter(done=(False if done == '0' else True), weixin_open_id=woi, avail_start <= datetime.datetime.now(), avail_end >= datetime.datetime.now())
         
         ret = list()
         for p in papers:

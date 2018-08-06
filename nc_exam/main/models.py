@@ -108,6 +108,8 @@ class ExamPapers(models.Model):
     ss_count = models.IntegerField()
     ms_count = models.IntegerField()
     jm_count = models.IntegerField()
+    avail_start = models.DateTimeField()
+    avail_end = models.DateTimeField()
 
     def __str__():
         return self.name
