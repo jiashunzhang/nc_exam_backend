@@ -62,5 +62,6 @@ urlpatterns = [
     path('deletePaperType', admin_views.deletePaperType),
     path('modMember', admin_views.modMember),
     path('addMember', admin_views.addMember),
-    path('getPaperImportLog', admin_views.getPaperImportLog)
+    path('getPaperImportLog', admin_views.getPaperImportLog),
+    path('getDWPConstraint', admin_views.getDWPConstraint)
 ]

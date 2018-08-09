@@ -491,6 +491,7 @@
                         return;
                     }
                     v_requests(that, this.mod ? "modMember" : "addMember", function(result) {
+                        //alert(JSON.stringify(result));
                         result.json().then(obj => {
                             if(obj.errmsg != "OK")
                                 throw obj.errmsg;
@@ -1257,7 +1258,8 @@
                     test_ss_count: 15,
                     test_ms_count: 15,
                     test_jm_count:15,
-                    three_new: false
+                    three_new: false,
+                    avail_date_range: []
                 };
             },
             methods: {
@@ -1395,14 +1397,21 @@
                         });
                     }, function(err) {
                         alert(JSON.stringify(err));
-                    }, { workshop: that.selected_workshops.join(), worktype: that.selected_worktypes.join(), position: that.selected_positions.join(), three_new: (that.three_new ? "1" : "0") });
+                    }, {
+                        workshop: that.selected_workshops.join(),
+                        worktype: that.selected_worktypes.join(),
+                        position: that.selected_positions.join(),
+                        three_new: (that.three_new ? "1" : "0")
+                    });
                 },
                 onCommit: function() {
                     if(!this.test_name ||
                         !this.test_time ||
                         !this.test_ss_count ||
                         !this.test_ms_count ||
-                        !this.test_jm_count) {
+                        !this.test_jm_count ||
+                        this.avail_date_range.length != 2
+                    ) {
                         alert("请将考试属性填写完整。");
                         return;
                     }
@@ -1453,7 +1462,9 @@
                         test_name: that.test_name,
                         test_ss_count: that.test_ss_count,
                         test_ms_count: that.test_ms_count,
-                        test_jm_count: that.test_jm_count
+                        test_jm_count: that.test_jm_count,
+                        avail_start: that.avail_date_range[0],
+                        avail_end: that.avail_date_range[1]
                     });
                 }
             },
@@ -1523,12 +1534,24 @@
                             <fieldset id="properties_group" style="border-radius: 25px; width: 100%">
                                 <legend>设置试卷属性</legend>
                                 <div style="width: 100%; display: flex; flex-direction: row; justify-content: center">
-                                    试卷名称：<el-input v-model="test_name" placeholder="在此输入试卷名称" size="mini" style="width: 200px"></el-input>
-                                    考试时间：<el-input-number v-model="test_time" :max="180" :min="1" size="mini" style="width: 120px"></el-input-number>分钟&nbsp;&nbsp;&nbsp;&nbsp;
-                                    及格分数：<el-input-number v-model="passing_score" :max="100" :min="0" size="mini" style="width: 120px"></el-input-number>&nbsp;&nbsp;&nbsp;&nbsp;
-                                    单选题：<el-input-number v-model="test_ss_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
-                                    多选题：<el-input-number v-model="test_ms_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
-                                    判断题：<el-input-number v-model="test_jm_count" :max="100" :min="0" size="mini"></el-input-number>道&nbsp;&nbsp;&nbsp;&nbsp;
+                                    试卷名称：<el-input v-model="test_name" placeholder="在此输入试卷名称" size="mini" style="width: 150px"></el-input>
+                                    考试时间：<el-input-number v-model="test_time" :max="180" :min="1" size="mini" style="width: 90px"></el-input-number>分钟&nbsp;&nbsp;
+                                    有效期：<el-date-picker
+                                        v-model="avail_date_range"
+                                        type="daterange"
+                                        start-placeholder="起时间"
+                                        end-placeholder="止时间"
+                                        :default-time="['00:00:00', '23:59:59']"
+                                        format="yyyy 年 MM 月 dd 日"
+                                        value-format="yyyy-MM-dd"
+                                        size="mini"
+                                        style="margin-right: 25px; width: 325px"
+                                    >
+                                    </el-date-picker>
+                                    及格分数：<el-input-number v-model="passing_score" :max="100" :min="0" size="mini" style="width: 90px"></el-input-number>&nbsp;&nbsp;
+                                    单选题：<el-input-number v-model="test_ss_count" :max="100" :min="0" size="mini" style="width: 90px"></el-input-number>道&nbsp;&nbsp;
+                                    多选题：<el-input-number v-model="test_ms_count" :max="100" :min="0" size="mini" style="width: 90px"></el-input-number>道&nbsp;&nbsp;
+                                    判断题：<el-input-number v-model="test_jm_count" :max="100" :min="0" size="mini" style="width: 90px"></el-input-number>道&nbsp;&nbsp;
                                 </div>
                             </fieldset>
                         </td>
@@ -1741,14 +1764,51 @@
                     }
                 },
                 onWorkShopSelected: function(val) {
+                    var that = this;
                     this.selected_workshops.splice(0, this.selected_workshops.length);
                     for(var i in val)
                         this.selected_workshops.push(val[i].value);
+
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        //alert(JSON.stringify(result));
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.worktypes && obj.positions) {
+                                that.selected_worktypes.splice(0, that.selected_worktypes.length);
+                                that.worktypes = obj.worktypes;
+                                that.selected_positions.splice(0, that.selected_positions.length);
+                                that.positions = obj.positions;
+                            } else
+                                throw "服务器返回异常。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { workshops: that.selected_workshops.join() });
                 },
                 onWorkTypeSelected: function(val) {
+                    var that = this;
                     this.selected_worktypes.splice(0, this.selected_worktypes.length);
                     for(var i in val)
                         this.selected_worktypes.push(val[i].value);
+
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.positions) {
+                                that.selected_positions.splice(0, that.selected_positions.length);
+                                that.positions = obj.positions;
+                            } else
+                                throw "服务器返回异常。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, { worktypes: that.selected_worktypes.join() });
                 },
                 onPositionSelected: function(val) {
                     this.selected_positions.splice(0, this.selected_positions.length);
@@ -2386,6 +2446,7 @@
                         return;
                     }
                     v_requests(that, "saveEditedQuestion", function(result) {
+                        alert(JSON.stringify(result));
                         result.json().then(obj => {
                             if(obj.errmsg != "OK")
                                 throw obj.errmsg;

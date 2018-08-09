@@ -35,6 +35,27 @@ class Position(models.Model):
     class Meta:
         db_table = 'Position'
 
+class DepWorkType(models.Model):
+    dep_id = models.ForeignKey(Department, on_delete=models.CASCADE, db_column='dep_id')
+    work_type_id = models.ForeignKey(WorkType, on_delete=models.CASCADE, db_column='work_type_id')
+
+    class Meta:
+        db_table = 'DepWorkType'
+
+class DepPosition(models.Model):
+    dep_id = models.ForeignKey(Department, on_delete=models.CASCADE, db_column='dep_id')
+    position_id = models.ForeignKey(Position, on_delete=models.CASCADE, db_column='position_id')
+
+    class Meta:
+        db_table = 'DepPosition'
+
+class WorkTypePosition(models.Model):
+    work_type_id = models.ForeignKey(WorkType, on_delete=models.CASCADE, db_column='work_type_id')
+    position_id = models.ForeignKey(Position, on_delete=models.CASCADE, db_column='position_id')
+
+    class Meta:
+        db_table = 'WorkTypePosition'
+
 class Members(models.Model):
     name = models.CharField(max_length=20)
     verified = models.BooleanField()
@@ -169,6 +190,8 @@ class ExamPapers(models.Model):
     ms_count = models.IntegerField()
     jm_count = models.IntegerField()
     paper_id = models.CharField(max_length=36)
+    avail_start = models.DateTimeField()
+    avail_end = models.DateTimeField()
 
     def __str__():
         return self.name

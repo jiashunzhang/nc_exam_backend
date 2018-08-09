@@ -4,7 +4,8 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.db import connection
 from django.db.models import Q
-from exam_admin.models import Department, WorkType, ExamPapers, TestPapers, Members, Papers, PaperTypes, Position, Questions, PaperImportLog, PaperPositionRange, PaperWorkTypeRange, PaperDepRange
+#from exam_admin.models import Department, WorkType, ExamPapers, TestPapers, Members, Papers, PaperTypes, Position, Questions, PaperImportLog, PaperPositionRange, PaperWorkTypeRange, PaperDepRange
+from exam_admin.models import *
 from django.http import HttpResponse
 from datetime import datetime
 from datetime import timedelta
@@ -423,12 +424,12 @@ def getScoreDetail(request):
             ws_name = ''
 
         if wt_id != '' and WorkType.objects.filter(work_type_id=int(wt_id)).exists():
-            wt_name = WorkType.objects.filter(work_type_id=int(wt_id)).type_name
+            wt_name = WorkType.objects.get(work_type_id=int(wt_id)).type_name
         else:
             wt_name = ''
 
         if pos_id != '' and Position.objects.filter(position_id=int(pos_id)).exists():
-            pos_name = Position.objects.filter(work_type_id=int(pos_id)).name
+            pos_name = Position.objects.get(work_type_id=int(pos_id)).name
         else:
             pos_name = ''
 
@@ -527,10 +528,12 @@ def createExams(request):
     test_ss_count = request.POST.get('test_ss_count', '')
     test_ms_count = request.POST.get('test_ms_count', '')
     test_jm_count = request.POST.get('test_jm_count', '')
+    avail_start = request.POST.get('avail_start', '')
+    avail_end = request.POST.get('avail_end', '')
 
     try:
         with connection.cursor() as cursor:
-            cursor.callproc('CommitExam', (paper_ids, ws, wt, pos, mems, test_time, passing_score, test_name, test_ss_count, test_ms_count, test_jm_count, str(uuid.uuid1())))
+            cursor.callproc('CommitExam', (paper_ids, ws, wt, pos, mems, test_time, passing_score, test_name, test_ss_count, test_ms_count, test_jm_count, str(uuid.uuid1()), avail_start, avail_end))
 
         return HttpResponse('{ \"errmsg\": \"OK\" }', content_type='text/json')
     except Exception as e:
@@ -574,6 +577,12 @@ def uploadQuestionLibraryFile(request):
         ws = wb.get_sheet_by_name(ws[0])
         i = 1
         for row in ws.rows:
+            if ws.cell(row=i, column=3).value is None or ws.cell(row=i, column=3).value == '' \
+                    or ws.cell(row=i, column=1).value is None or ws.cell(row=i, column=1).value == '' \
+                    or ws.cell(row=i, column=2).value is None or ws.cell(row=i, column=2).value == '':
+                i += 1
+                continue
+
             new_ques = Questions()
             new_ques.paper_id = new_paper
             new_ques.question_title = ws.cell(row=i, column=3).value
@@ -713,7 +722,7 @@ def saveEditedQuestion(request):
     q_id = request.POST.get('question_id', '')
     d = request.POST.get('deleted', '0')
 
-    if (d == '0' and (q_type == '' or q_title == '' or q_answer_text == '' or q_right == '')) or q_id == '':
+    if (d == '0' and (q_type == '' or q_title == '' or q_answer_texts == '' or q_right == '')) or q_id == '':
         return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
 
     try:
@@ -916,7 +925,7 @@ def addMember(request):
         mem = Members()
         
         mem.name = name
-        mem.phone = phone
+        mem.phone_number = phone
         mem.idcard = idcard
         mem.dep_id = ws
         mem.work_type_id = wt
@@ -924,6 +933,7 @@ def addMember(request):
         mem.deleted = (False if deleted == '0' else True)
         mem.three_new = (False if three_new == '0' else True)
         mem.intro = intro
+        mem.verified = True
         mem.save()
 
         return HttpResponse('{ \"errmsg\": \"OK\" }', content_type='text/json')
@@ -944,6 +954,90 @@ def getPaperImportLog(request):
         return HttpResponse(json.dumps(ret), content_type='text/json')
     except Exception as e:
         return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e), content_type='text/json')
+
+@csrf_exempt
+def getDWPConstraint(request):
+    wss = request.POST.get('workshops', '')
+    wts = request.POST.get('worktypes', '')
+    poss = request.POST.get('positions', '')
+
+    try:
+        conds = list()
+        where_str = '' if wss == '' and wts == '' and poss == '' else ' where '
+        if wss != '':
+            conds.append('dwt.dep_id in(' + wss + ') and wtp.position_id in(select position_id from DepPosition where dep_id in(' + wss + '))')
+        if wts != '':
+            conds.append('wtp.work_type_id in(' + wts + ')')
+        if poss != '':
+            conds.append('wtp.position_id in(' + poss + ')')
+
+        conds_str = ' and '.join(conds)
+        
+        recs = DepWorkType.objects.raw('''select (@cnt := @cnt + 1) as id,dwt.dep_id, wtp.position_id, wtp.work_type_id 
+                                          from DepWorkType dwt 
+                                          inner join WorkTypePosition wtp on dwt.work_type_id=wtp.work_type_id cross join (select @cnt := 0) t''' + where_str + conds_str)
+        ws_ids = set()
+        wt_ids = set()
+        ps_ids = set()
+
+        for r in recs:
+            ws_ids.add(r.dep_id.dep_id)
+            wt_ids.add(r.work_type_id.work_type_id)
+            ps_ids.add(r.position_id)
+
+#        if wss != '':
+#            ws_ids = set(wss.split(','))
+#            if wts == '':
+#                dwt = DepWorkType.objects.filter(dep_id__in=wss.split(','))
+#                for w in dwt:
+#                    wt_ids.add(w.work_type_id)
+#            else:
+#                for w in wts.split(','):
+#                    wt_ids.add(w)
+#
+#            if poss == '':
+#                dp = DepPosition.objects.filter(dep_id__in=wss.split(','))
+#                for p in dp:
+#                    ps_ids.add(p.position_id)
+#            else:
+#                for p in poss.split(','):
+#                    ps_ids.add(p)
+#        else:
+#            ws_ids = set([ d.dep_id for d in Department.objects.all() ])
+#
+#            if wts == '':
+#
+
+        if len(ws_ids) != 0:
+            workshops = Department.objects.filter(dep_id__in=list(ws_ids))
+        else:
+            workshops = Department.objects.all()
+
+        if len(wt_ids) != 0:
+            worktypes = WorkType.objects.filter(work_type_id__in=list(wt_ids))
+        else:
+            worktypes = WorkType.objects.all()
+
+        if len(ps_ids) != 0:
+            positions = Position.objects.filter(position_id__in=list(ps_ids))
+        else:
+            positions = Position.objects.all()
+
+        ws_ret = list()
+        wt_ret = list()
+        ps_ret = list()
+
+        for d in workshops:
+            ws_ret.append({ 'value': d.dep_id, 'label': d.dep_name })
+        for t in worktypes:
+            wt_ret.append({ 'value': t.work_type_id, 'label': t.type_name })
+        for p in positions:
+            ps_ret.append({ 'value': p.position_id, 'label': p.name })
+
+        return HttpResponse('{ \"workshops\": %s, \"worktypes\": %s, \"positions\": %s }' % (json.dumps(ws_ret), json.dumps(wt_ret), json.dumps(ps_ret)), content_type='text/json')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return HttpResponse('{ \"errmsg\": \"%s\", \"lineno\": \"%s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
 
 def dictfetchall(cursor):
     columns = [col[0] for col in cursor.description]

@@ -206,7 +206,7 @@ def getExamPapers(request):
         if not m:
             return HttpResponse('{ \"errmsg\": \"无此用户。\" }', content_type='text/json')
 
-        papers = ExamPapers.objects.filter(done=(False if done == '0' else True), weixin_open_id=woi)
+        papers = ExamPapers.objects.filter(done=(False if done == '0' else True), weixin_open_id=woi, avail_start__lte=datetime.datetime.now(), avail_end__gte=datetime.datetime.now())
         
         ret = list()
         for p in papers:
@@ -427,6 +427,7 @@ def handin(request):
         new_paper.weixin_open_id = me
         new_paper.date_time = datetime.datetime.now()
         new_paper.score = 0.0
+        new_paper.done = False
         new_paper.save()
 
         pd_obj = json.loads(paper_detail)
@@ -437,11 +438,11 @@ def handin(request):
             ques = Questions.objects.get(question_id=q_id)
             tq.question_id = ques
             tq.test_paper_id = new_paper
-            tq.answers = q_ans
+            tq.answers = q_ans.replace(',', '')
             q_count += 1
             tq.sn = q_count
 
-            if q_ans == ques.question_right_answers:
+            if q_ans.replace(',', '') == ques.question_right_answers:
                 total_score += 1.0
                 tq.score = 1.0
             else:
@@ -450,6 +451,7 @@ def handin(request):
 
         total_score_100 = (total_score / q_count) * 100
         new_paper.score = total_score_100
+        new_paper.done = True
         new_paper.save()
 
         return HttpResponse('{ \"errmsg\": \"OK\", \"score\": \"%f\", \"passing_score\": \"%f\", \"test_paper_id\": \"%s\" }' % (total_score_100, pid_obj.passing_score, new_paper.test_paper_id), content_type='text/json')
@@ -490,7 +492,7 @@ def handinExam(request):
             q_count += 1
             tq.sn = q_count
 
-            if q_ans == ques.question_right_answers:
+            if q_ans.replace(',', '') == ques.question_right_answers:
                 total_score += 1.0
                 tq.score = 1.0
             else:
@@ -513,7 +515,7 @@ def getUndoneExamCount(request):
     if not woi:
         return HttpResponse('{ \"errmsg\": \"登录信息丢失。\" }', content_type='text/json')
     try:
-        count = ExamPapers.objects.filter(weixin_open_id=woi, done=False).count()
+        count = ExamPapers.objects.filter(weixin_open_id=woi, done=False, avail_start__lte=datetime.datetime.now(), avail_end__gte=datetime.datetime.now()).count()
         return HttpResponse('{ \"count\": \"%d\" }' % (count,), content_type='text/json')
     except Exception as e:
         return HttpResponse('{ \"errmsg\": \"%s\" }' % str(e))
