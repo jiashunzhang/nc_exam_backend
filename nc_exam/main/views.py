@@ -438,11 +438,11 @@ def handin(request):
             ques = Questions.objects.get(question_id=q_id)
             tq.question_id = ques
             tq.test_paper_id = new_paper
-            tq.answers = q_ans
+            tq.answers = q_ans.replace(',', '')
             q_count += 1
             tq.sn = q_count
 
-            if q_ans == ques.question_right_answers:
+            if q_ans.replace(',', '') == ques.question_right_answers:
                 total_score += 1.0
                 tq.score = 1.0
             else:
@@ -492,7 +492,7 @@ def handinExam(request):
             q_count += 1
             tq.sn = q_count
 
-            if q_ans == ques.question_right_answers:
+            if q_ans.replace(',', '') == ques.question_right_answers:
                 total_score += 1.0
                 tq.score = 1.0
             else:
