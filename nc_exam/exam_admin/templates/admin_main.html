@@ -491,6 +491,7 @@
                         return;
                     }
                     v_requests(that, this.mod ? "modMember" : "addMember", function(result) {
+                        //alert(JSON.stringify(result));
                         result.json().then(obj => {
                             if(obj.errmsg != "OK")
                                 throw obj.errmsg;
@@ -1409,7 +1410,7 @@
                         !this.test_ss_count ||
                         !this.test_ms_count ||
                         !this.test_jm_count ||
-                        this.avail_date_range.length <> 2
+                        this.avail_date_range.length != 2
                     ) {
                         alert("请将考试属性填写完整。");
                         return;
@@ -1545,7 +1546,6 @@
                                         value-format="yyyy-MM-dd"
                                         size="mini"
                                         style="margin-right: 25px; width: 325px"
-                                        :disabled="loading"
                                     >
                                     </el-date-picker>
                                     及格分数：<el-input-number v-model="passing_score" :max="100" :min="0" size="mini" style="width: 90px"></el-input-number>&nbsp;&nbsp;
@@ -2446,6 +2446,7 @@
                         return;
                     }
                     v_requests(that, "saveEditedQuestion", function(result) {
+                        alert(JSON.stringify(result));
                         result.json().then(obj => {
                             if(obj.errmsg != "OK")
                                 throw obj.errmsg;

@@ -577,6 +577,12 @@ def uploadQuestionLibraryFile(request):
         ws = wb.get_sheet_by_name(ws[0])
         i = 1
         for row in ws.rows:
+            if ws.cell(row=i, column=3).value is None or ws.cell(row=i, column=3).value == '' \
+                    or ws.cell(row=i, column=1).value is None or ws.cell(row=i, column=1).value == '' \
+                    or ws.cell(row=i, column=2).value is None or ws.cell(row=i, column=2).value == '':
+                i += 1
+                continue
+
             new_ques = Questions()
             new_ques.paper_id = new_paper
             new_ques.question_title = ws.cell(row=i, column=3).value
@@ -716,7 +722,7 @@ def saveEditedQuestion(request):
     q_id = request.POST.get('question_id', '')
     d = request.POST.get('deleted', '0')
 
-    if (d == '0' and (q_type == '' or q_title == '' or q_answer_text == '' or q_right == '')) or q_id == '':
+    if (d == '0' and (q_type == '' or q_title == '' or q_answer_texts == '' or q_right == '')) or q_id == '':
         return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
 
     try:
@@ -919,7 +925,7 @@ def addMember(request):
         mem = Members()
         
         mem.name = name
-        mem.phone = phone
+        mem.phone_number = phone
         mem.idcard = idcard
         mem.dep_id = ws
         mem.work_type_id = wt
@@ -927,6 +933,7 @@ def addMember(request):
         mem.deleted = (False if deleted == '0' else True)
         mem.three_new = (False if three_new == '0' else True)
         mem.intro = intro
+        mem.verified = True
         mem.save()
 
         return HttpResponse('{ \"errmsg\": \"OK\" }', content_type='text/json')

@@ -86,6 +86,7 @@ class TestPapers(models.Model):
     date_time = models.DateTimeField()
     score = models.IntegerField()
     if_exam = models.BooleanField()
+    done = models.BooleanField()
     weixin_open_id = models.ForeignKey(Members, to_field='weixin_open_id', on_delete=models.CASCADE, db_column='weixin_open_id')
 
     def __str__():
