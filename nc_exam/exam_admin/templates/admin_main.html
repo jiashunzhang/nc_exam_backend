@@ -69,13 +69,17 @@
     <body>
         <div id="app" style="width: 100%; height: 100%">
             <el-container style="height: 100%">
-                <el-header class="admin_banner" style="padding: 0px; background-image: url(./static/admin_top_banner.gif); background-size: 100% 100%; background-repeat: no-repeat">
+                <el-header class="admin_banner" style="box-shadow: 5px 5px 2px #888888;padding: 0px; background-image: url(./static/admin_top_banner.gif); background-size: 100% 100%; background-repeat: no-repeat">
                     <span class="top_banner_text">南&nbsp;&nbsp;仓&nbsp;&nbsp;站&nbsp;&nbsp;微&nbsp;&nbsp;信&nbsp;&nbsp;考&nbsp;&nbsp;试&nbsp;&nbsp;管&nbsp;&nbsp;理</span>
                         {{ tops_date_range }}
                 </el-header>
                 <el-container>
-                    <el-aside width="200px" style="background-color: rgb(238, 241, 246); color: #333">
-                        <h5>选择功能</h5>
+                    <el-aside width="200px" style="background-color: rgb(238, 241, 246); color: #333; margin-top: 5px; margin-bottom: 5px">
+                        <div style="width: 100%; height: 60px; display: flex; flex-direction: row; justify-content: center; align-items: center">
+                            <span style="width: 100%; text-align: center; color: #fff; text-shadow: 0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa, 0 6px 1px rgba(0,0,0,0.1), 0 0 5px rgba(0,0,0,0.1),0 1px 3px rgba(0,0,0,0.3),0 3px 5px rgba(0,0,0,0.2),0 5px 10px rgba(0,0,0,0.25);">
+                                功能选项
+                            </span>
+                        </div>    
                         <el-menu @select="onAsideMenuSelected">
                             <el-submenu index="question_library">
                                 <template slot="title">
@@ -100,31 +104,71 @@
                                 <el-menu-item index="manage-members">
                                     <span slot="title">人员查询与编辑</span>
                                 </el-menu-item>
-                                <el-menu-item index="import-members">
+                                <!--<el-menu-item index="import-members">
                                     <span slot="title">人员库导入</span>
-                                </el-menu-item>
+                                </el-menu-item>-->
                             </el-submenu>
                             <el-submenu index="statistics">
                                 <template slot="title">
                                     <i class="el-icon-sort"></i>
-                                    <span slot="title">考试统计分析</span>
+                                    <span slot="title">考试及练习统计</span>
                                 </template>
                                 <el-menu-item index="infos">
                                     <span slot="title">考试情况汇总</span>
                                 </el-menu-item>
+                                <el-menu-item index="tests">
+                                    <span slot="title">练习情况汇总</span>
+                                </el-menu-item>
                                 <el-menu-item index="ana">
                                     <span slot="title">考试情况分析</span>
                                 </el-menu-item>
-                                <el-menu-item index="tops">
+                                <!--<el-menu-item index="tops">
                                     <span slot="title">榜单</span>
                                 </el-menu-item>
                                 <el-menu-item index="charts">
                                     <span slot="title">走势图</span>
-                                </el-menu-item>
+                                </el-menu-item>-->
                             </el-submenu>
                             <el-menu-item index="manage-exams">
                                 <i class="el-icon-edit-outline"></i>
                                 <span slot="title">考试管理</span>
+                            </el-menu-item>
+                            <el-submenu index="accumulate-points-management">
+                                <template slot="title">
+                                    <i class="el-icon-goods"></i>
+                                    <span slot="title">积分管理</span>
+                                </template>
+                                <el-menu-item index="manage-accumulate-points">
+                                    <span slot="title">积分设置</span>
+                                </el-menu-item>
+                                <el-menu-item index="accumulate-points-statistics">
+                                    <span slot="title">积分统计</span>
+                                </el-menu-item>
+                            </el-submenu>
+                            <el-submenu index="rp-management">
+                                <template slot="title">
+                                    <i class="el-icon-message"></i>
+                                    <span slot="title">红包管理</span>
+                                </template>
+                                <el-menu-item index="rp_rules_add">
+                                    <span slot="title">新增红包规则</span>
+                                </el-menu-item>
+                                <el-menu-item index="rp_rules_edit">
+                                    <span slot="title">红包规则编辑</span>
+                                </el-menu-item>
+                                <el-menu-item index="rp_type_edit">
+                                    <span slot="title">红包类型编辑</span>
+                                </el-menu-item>
+                                <el-menu-item index="rp_summary">
+                                    <span slot="title">红包发放概览</span>
+                                </el-menu-item>
+                                <el-menu-item index="rp_statistics">
+                                    <span slot="title">红包月度统计</span>
+                                </el-menu-item>
+                            </el-submenu>
+                            <el-menu-item index="manage-noticeboard">
+                                <i class="el-icon-edit-outline"></i>
+                                <span slot="title">公告牌管理</span>
                             </el-menu-item>
                         </el-menu>
                     </el-aside>
@@ -133,7 +177,7 @@
                         </component>
                     </el-main>
                 </el-container>
-                <el-footer class="admin_banner" height="20px" style="padding: 0px; background-image: url(./static/admin_footer_banner.png); background-size: 100% 100%; background-repeat: no-repeat">
+                <el-footer class="admin_banner" height="20px" style="box-shadow: 5px -5px 2px #888888; padding: 0px; background-image: url(./static/admin_footer_banner.png); background-size: 100% 100%; background-repeat: no-repeat">
                     <span style="font-size: 15px">南仓站&copy;2018</span>
                 </el-footer>
             </el-container>
@@ -153,7 +197,21 @@
         }
         $("#member_table").attr("height", ($("main.el-main").height() - 60) + "px");
         window.onresize = resizeMemberTableFrame;
-
+        
+        var Welcome = {
+            template: `
+                <div style="width: 100%; height: 100%; background-image: url('./static/welcome.png'); background-repeat: no-repeat; background-size: 100% 100%; display: flex; justify-content: center; align-items: flex-start">
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; margin-right: 40px">
+                        <img src="https://ncexam-1255671825.cos.ap-chengdu.myqcloud.com/ncexam_microqrcode.jpg" width="100px" height="100px" />
+                        <span>南仓微信考试小程序码</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; margin-right: 40px">
+                        <img src="https://ncexam-1255671825.cos.ap-chengdu.myqcloud.com/1.0.13.jpg" width="100px" height="100px" />
+                        <span>南仓微信考试体验版</span>
+                    </div>
+                </div>
+            `
+        };
         var Charts = {
             template: `
                 <div id="chart-container" style="width: 800px; height: 600px">HIGHCHARTS</div>
@@ -384,12 +442,16 @@
                     member_workshop_options: [],
                     member_worktype_options: [],
                     member_position_options: [],
+                    mod_workshop_options: [],
+                    mod_worktype_options: [],
+                    mod_position_options: [],
                     member_workshop: "",
                     member_worktype: "",
                     member_position: "",
                     member_name: "",
                     member_idcard: "",
                     member_phone: "",
+                    membre_allow_rp: false,
                     three_new: false,
                     mod_dialog_visible: false,
                     mod_name: "",
@@ -401,42 +463,49 @@
                     mod_three_new: false,
                     mod_deleted: false,
                     mod_intro: "",
+                    mod_allow_rp: false,
                     cur_row: {},
                     loading: false,
+                    dialog_loading: false,
                     mod: true,
                     mod_title: "人员修改"
                 };
             },
             mounted: function() {
-                var that = this;
-                this.window_resize_org = window.onresize;
-                window.onresize = function() {
-                    that.member_table_height = $("main.el-main").height() - 60;
-                };
-                function getMemberComboData(c) {
-                    v_requests(that, "getTopsComboData", function(result) {
-                        result.json().then(obj => {
-                            if(obj.errmsg) 
-                                throw obj.errmsg;
-                            if(obj.data) {
-                                eval("that.member_" + c + "_options = obj.data");
-                            }
-                            eval("that.member_" + c + "_options.splice(0, 0, { label: '全部', value: '' })");
-                        }).catch(err => {
-                            alert(err);
-                        });
-                    }, function(err) {
-                        alert(err);
-                    }, { combo: c });
-                }
-                getMemberComboData("workshop");
-                getMemberComboData("worktype");
-                getMemberComboData("position");
+                this.initCombos("member");
+                this.initCombos("mod");
             },
             unmounted: function() {
                 window.onresize = this.window_resize_org;
             },
             methods: {
+                initCombos: function(tp) {
+                    var that = this;
+                    this.window_resize_org = window.onresize;
+                    window.onresize = function() {
+                        that.member_table_height = $("main.el-main").height() - 60;
+                    };
+                    function getMemberComboData(c) {
+                        v_requests(that, "getTopsComboData", function(result) {
+                            result.json().then(obj => {
+                                if(obj.errmsg) 
+                                    throw obj.errmsg;
+                                if(obj.data) {
+                                    eval("that." + tp + "_" + c + "_options = obj.data");
+                                }
+                                if(tp == "member")
+                                    eval("that." + tp + "_" + c + "_options.splice(0, 0, { label: '全部', value: '' })");
+                            }).catch(err => {
+                                alert(err);
+                            });
+                        }, function(err) {
+                            alert(err);
+                        }, { combo: c });
+                    }
+                    getMemberComboData("workshop");
+                    getMemberComboData("worktype");
+                    getMemberComboData("position");
+                },
                 onLookupList: function(event) {
                     var that = this;
                     if(that.member_table_height == 0)
@@ -467,6 +536,7 @@
                         worktype: that.member_worktype,
                         idcard: that.member_idcard,
                         position: that.member_position,
+                        allow_rp: that.member_allow_rp,
                         three_new: (that.three_new ? "1" : "0")
                     });
                 },
@@ -484,6 +554,7 @@
                         this.mod_worktype == this.cur_row.wt_value &&
                         this.mod_position == this.cur_row.pos_value &&
                         this.mod_intro == this.cur_row.intro &&
+                        this.mod_allow_rp == (this.cur_row.allow_rp == "是") &&
                         this.mod_three_new == (this.cur_row.three_new == "是") &&
                         this.mod_deleted == (this.cur_row.deleted == "是")) {
                         alert("未修改。");
@@ -517,38 +588,183 @@
                         position: that.mod_position,
                         three_new: (that.mod_three_new ? "1" : "0"),
                         deleted: (that.mod_deleted ? "1" : "0"),
+                        allow_rp: (that.mod_allow_rp ? "1" : "0"),
                         intro: that.mod_intro
                     });
                 },
                 handleEdit: function(index, row) {
+                    this.initCombos("mod");
                     this.mod = true;
                     this.mod_title = "人员修改";
                     this.cur_row = row;
                     this.mod_name = row.name;
                     this.mod_phone = row.phone;
                     this.mod_idcard = row.idcard;
-                    this.mod_workshop = row.ws_value;
-                    this.mod_worktype = row.wt_value;
-                    this.mod_position = row.pos_value;
                     this.mod_intro = row.intro;
                     this.mod_three_new = (row.three_new == '是');
                     this.mod_deleted = (row.deleted == '是');
+                    this.mod_allow_rp = (row.allow_rp == '是')
                     this.mod_dialog_visible = true;
+                    let that = this;
+                    this.$refs.mod_dialog.$nextTick(function() {
+                        that.mod_workshop = row.ws_value;
+                        that.onModWorkShopChange(row.ws_value);
+                        that.$refs.cb_mod_worktypes.$nextTick(function() {
+                            if(that.mod_worktype_options.find(item => item.value == row.wt_value))
+                                that.mod_worktype = row.wt_value;
+                            else
+                                that.mod_worktype = that.mod_worktype_options[0].value;
+
+                            that.onModWorkTypeChange(row.wt_value);
+                            that.$refs.cb_mod_positions.$nextTick(function() {
+
+                            if(that.mod_position_options.find(item => item.value == row.pos_value))
+                                that.mod_position = row.pos_value;
+                            else
+                                that.mod_postion = that.mod_position_options[0].value;
+                            });
+                        });
+                    });
                 },
                 onAddMember: function() {
+                    this.initCombos("mod");
                     this.mod = false;
                     this.mod_title = "人员添加";
                     this.mod_name = "";
                     this.mod_phone = "";
                     this.mod_idcard = "";
-                    this.mod_workshop = this.member_workshop_options[1].value;
-                    this.mod_worktype = this.member_worktype_options[1].value;
-                    this.mod_position = this.member_position_options[1].value;
                     this.mod_intro = "";
                     this.mod_three_new = true;
                     this.mod_deleted = false;
                     this.mod_dialog_visible = true;
-                }
+                    this.mod_allow_rp = true;
+                    let that = this;
+                    this.$refs.mod_dialog.$nextTick(function() {
+                        that.mod_workshop = that.mod_workshop_options[0].value;
+                        that.onModWorkShopChange(that.mod_workshop_options[0].value);
+                        that.$refs.cb_mod_worktypes.$nextTick(function() {
+                            that.onModWorkTypeChange(that.mod_worktype_options[0].value);
+                        });
+                    });
+                },
+                onWorkShopChange: function(val) {
+                    let that = this;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.worktypes && obj.positions) {
+                                let org_worktype = that.member_worktype;
+                                that.member_worktype_options = [{ label: "全部", value: "" }].concat(obj.worktypes);
+                                that.$refs.cb_worktypes.$nextTick(function() {
+                                    if(!obj.worktypes.find(item => item.value == org_worktype))
+                                        that.member_worktype = "";
+                                });
+
+                                let org_position = that.member_position;
+                                that.member_position_options = [{ label: "全部", value: "" }].concat(obj.positions);
+                                that.$refs.cb_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.member_position = "";
+                                });
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        workshops: val
+                    });
+                },
+                onWorkTypeChange: function(val) {
+                    let that = this;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.positions) {
+                                let org_position = that.member_position;
+                                that.member_position_options = [{ label: "全部", value: "" }].concat(obj.positions);
+                                that.$refs.cb_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.member_position = "";
+                                });
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        worktypes: val
+                    });
+                },
+                onModWorkShopChange: function(val) {
+                    let that = this;
+                    this.dialog_loading = true;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.worktypes && obj.positions) {
+                                let org_worktype = that.mod_worktype;
+                                that.mod_worktype_options = obj.worktypes;
+                                that.$refs.cb_mod_worktypes.$nextTick(function() {
+                                    if(!obj.worktypes.find(item => item.value == org_worktype))
+                                        that.mod_worktype = obj.worktypes[0].value;
+                                });
+
+                                let org_position = that.mod_position;
+                                that.mod_position_options = obj.positions;
+                                that.$refs.cb_mod_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.mod_position = obj.positions[0].value;
+                                });
+                                that.dialog_loading = false;
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.dialog_loading = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.dialog_loading = false;
+                    }, {
+                        workshops: val
+                    });
+                },
+                onModWorkTypeChange: function(val) {
+                    let that = this;
+                    this.dialog_loading = true;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.positions) {
+                                let org_position = that.mod_position;
+                                that.mod_position_options = obj.positions;
+                                that.$refs.cb_mod_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.mod_position = obj.positions[0].value;
+                                });
+                                that.dialog_loading = false;
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.dialog_loading = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.dialog_loading = false;
+                    }, {
+                        worktypes: val
+                    });
+                },
             },
             template: `
                 <table id="member_frame" style="width: 99%; height: 100%; border-width: 0px; border-collapse: collpase; padding: 0px; margin: 0px">
@@ -557,7 +773,15 @@
                             姓名：<el-input :disabled="loading" placeholder="请输入姓名" size="mini" clearable v-model="member_name" style="margin-right: 25px; width: 95px"></el-input>
                             手机号码：<el-input :disabled="loading" placeholder="请输入手机号码" size="mini" clearable v-model="member_phone" style="margin-right: 25px; width: 120px"></el-input>
                             身份证号码：<el-input :disabled="loading" placeholder="请输入身份证号码" size="mini" clearable v-model="member_idcard" style="margin-right: 25px; width: 170px"></el-input>                         
-                            车间：<el-select size="mini" :disabled="loading" v-model="member_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
+                            车间：<el-select
+                                    size="mini"
+                                    :disabled="loading"
+                                    v-model="member_workshop"
+                                    placeholder="请选择车间"
+                                    style="margin-right: 25px; width: 110px"
+                                    @change="onWorkShopChange"
+                                    ref="cb_workshops"
+                                >
                                 <el-option
                                     v-for="item in member_workshop_options"
                                     :key="item.value"
@@ -565,7 +789,15 @@
                                     :value="item.value"
                                 ></el-option>
                             </el-select>
-                            工种：<el-select size="mini" :disabled="loading" v-model="member_worktype" placeholder="请选择工种" style="margin-right: 25px; width: 110px">
+                            工种：<el-select
+                                    size="mini"
+                                    :disabled="loading"
+                                    v-model="member_worktype"
+                                    placeholder="请选择工种"
+                                    style="margin-right: 25px; width: 110px"
+                                    @change="onWorkTypeChange"
+                                    ref="cb_worktypes"
+                                >
                                 <el-option
                                     v-for="item in member_worktype_options"
                                     :key="item.value"
@@ -573,7 +805,14 @@
                                     :value="item.value"
                                 ></el-option>
                             </el-select>
-                            职名：<el-select :disabled="loading" size="mini" v-model="member_position" placeholder="请选择职名" style="margin-right: 25px; width: 110px">
+                            职名：<el-select
+                                    :disabled="loading"
+                                    size="mini"
+                                    v-model="member_position"
+                                    placeholder="请选择职名"
+                                    style="margin-right: 25px; width: 110px"
+                                    ref="cb_positions"
+                                >
                                 <el-option
                                     v-for="item in member_position_options"
                                     :key="item.value"
@@ -642,6 +881,12 @@
                                 >
                                 </el-table-column>
                                 <el-table-column
+                                    label="红包"
+                                    width="80"
+                                    prop="allow_rp"
+                                >
+                                </el-table-column>
+                                <el-table-column
                                     label="手机号码"
                                     width="150"
                                     prop="phone"
@@ -679,16 +924,23 @@
                                 :visible.sync="mod_dialog_visible"
                                 :title="mod_title"
                                 width="510px"
+                                ref="mod_dialog"
                             >
                                 <table>
                                     <tr>
                                         <td>姓名：</td>
                                         <td><el-input v-model="mod_name" size="mini" clearable style="width: 185px"></el-input></td>
                                         <td>
-                                            车间：<el-select size="mini" v-model="mod_workshop" style="width: 110px">
+                                            车间：<el-select
+                                                size="mini"
+                                                v-model="mod_workshop"
+                                                style="width: 110px"
+                                                @change="onModWorkShopChange"
+                                                ref="cb_mod_workshops"
+                                                :disabled="dialog_loading"
+                                            >
                                                 <el-option
-                                                    v-for="item in member_workshop_options"
-                                                    v-if="item.value !== ''"
+                                                    v-for="item in mod_workshop_options"
                                                     :key="item.value"
                                                     :label="item.label"
                                                     :value="item.value"
@@ -704,10 +956,16 @@
                                             <el-input size="mini" clearable v-model="mod_phone" style="margin-right: 25px; width: 185px"></el-input>
                                         </td>
                                         <td>
-                                            工种：<el-select size="mini" v-model="mod_worktype" style="width: 110px">
+                                            工种：<el-select
+                                                size="mini"
+                                                v-model="mod_worktype"
+                                                style="width: 110px"
+                                                @change="onModWorkTypeChange"
+                                                ref="cb_mod_worktypes"
+                                                :disabled="dialog_loading"
+                                            >
                                                 <el-option
-                                                    v-for="item in member_worktype_options"
-                                                    v-if="item.value !== ''"
+                                                    v-for="item in mod_worktype_options"
                                                     :key="item.value"
                                                     :label="item.label"
                                                     :value="item.value"
@@ -722,20 +980,28 @@
                                         <td>
                                             <el-input size="mini" clearable v-model="mod_idcard" style="width: 185px"></el-input>                         
                                         </td>
-                                        职名：<el-select size="mini" v-model="mod_position" style="width: 110px">
-                                            <el-option
-                                                v-for="item in member_position_options"
-                                                v-if="item.value != ''"
-                                                :key="item.value"
-                                                :label="item.label"
-                                                :value="item.value"
-                                            ></el-option>
-                                        </el-select>
+                                        <td>
+                                            职名：<el-select
+                                                size="mini"
+                                                v-model="mod_position"
+                                                style="width: 110px"
+                                                ref="cb_mod_positions"
+                                                :disabled="dialog_loading"
+                                            >
+                                                <el-option
+                                                    v-for="item in mod_position_options"
+                                                    :key="item.value"
+                                                    :label="item.label"
+                                                    :value="item.value"
+                                                ></el-option>
+                                            </el-select>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td colspan="99">
                                             <el-checkbox v-model="mod_three_new" style="margin-right: 10px">三新</el-checkbox>
-                                            <el-checkbox v-model="mod_deleted">禁用</el-checkbox>
+                                            <el-checkbox v-model="mod_deleted" style="margin-right: 10px">禁用</el-checkbox>
+                                            <el-checkbox v-model="mod_allow_rp">允许红包</el-checkbox>
                                         </td>
                                     </tr>
                                     <tr>
@@ -748,8 +1014,8 @@
                                     </tr>
                                 </table>
                                 <span slot="footer">
-                                    <el-button type="primary" size="mini" @click="onSaveModMember">保存</el-button>
-                                    <el-button size="mini" @click="mod_dialog_visible = false">取消</el-button>
+                                    <el-button :loading="dialog_loading" type="primary" size="mini" @click="onSaveModMember">保存</el-button>
+                                    <el-button :loading="dialog_loading" size="mini" @click="mod_dialog_visible = false">取消</el-button>
                                 </span>
                             </el-dialog>
                         </td>
@@ -929,6 +1195,61 @@
                     catch(e) {
                         alert(e, wbout);
                     }
+                },
+                onWorkShopChange: function(val) {
+                    let that = this;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.worktypes && obj.positions) {
+                                let org_worktype = that.info_worktype;
+                                that.info_worktype_options = [{ label: "全部", value: "" }].concat(obj.worktypes);
+                                that.$refs.cb_worktypes.$nextTick(function() {
+                                    if(!obj.worktypes.find(item => item.value == org_worktype))
+                                        that.info_worktype = "";
+                                });
+
+                                let org_position = that.info_position;
+                                that.info_position_options = [{ label: "全部", value: "" }].concat(obj.positions);
+                                that.$refs.cb_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.info_position = "";
+                                });
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        workshops: that.info_workshop
+                    });
+                },
+                onWorkTypeChange: function(val) {
+                    let that = this;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.positions) {
+                                let org_position = that.info_position;
+                                that.info_position_options = [{ label: "全部", value: "" }].concat(obj.positions);
+                                that.$refs.cb_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.info_position = "";
+                                });
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        worktypes: that.info_worktype
+                    });
                 }
             },
             computed: {
@@ -982,7 +1303,15 @@
                                 :disabled="loading"
                             >
                             </el-date-picker>
-                            车间：<el-select size="mini" :disabled="loading" v-model="info_workshop" placeholder="请选择车间" style="margin-right: 25px; width: 110px">
+                            车间：<el-select
+                                        ref="cb_workshops"
+                                        size="mini"
+                                        :disabled="loading"
+                                        v-model="info_workshop"
+                                        placeholder="请选择车间"
+                                        style="margin-right: 25px; width: 110px"
+                                        @change="onWorkShopChange"
+                            >
                                 <el-option
                                     v-for="item in info_workshop_options"
                                     :key="item.value"
@@ -990,7 +1319,15 @@
                                     :value="item.value"
                                 ></el-option>
                             </el-select>
-                            工种：<el-select size="mini" :disabled="loading" v-model="info_worktype" placeholder="请选择工种" style="margin-right: 25px; width: 110px">
+                            工种：<el-select
+                                    ref="cb_worktypes"
+                                    size="mini"
+                                    :disabled="loading"
+                                    v-model="info_worktype"
+                                    placeholder="请选择工种"
+                                    style="margin-right: 25px; width: 110px"
+                                    @change="onWorkTypeChange"
+                            >
                                 <el-option
                                     v-for="item in info_worktype_options"
                                     :key="item.value"
@@ -998,7 +1335,14 @@
                                     :value="item.value"
                                 ></el-option>
                             </el-select>
-                            职名：<el-select size="mini" :disabled="loading" v-model="info_position" placeholder="请选择职名" style="margin-right: 25px; width: 110px">
+                            职名：<el-select
+                                    ref="cb_positions"
+                                    size="mini"
+                                    :disabled="loading"
+                                    v-model="info_position"
+                                    placeholder="请选择职名"
+                                    style="margin-right: 25px; width: 110px"
+                            >
                                 <el-option
                                     v-for="item in info_position_options"
                                     :key="item.value"
@@ -1234,6 +1578,482 @@
                 </table>
             `
         };
+        var Tests = {
+            data: function() {
+                return {
+                    date_time_range: [],
+                    sum_key: "车间",
+                    activated: "1",
+                    catalogues: [],
+                    sum_dialog_visible: false,
+                    dialog_workshop: "",
+                    dialog_worktype: "",
+                    dialog_position: "",
+                    dialog_workshop_options: [],
+                    dialog_worktype_options: [],
+                    dialog_position_options: [],
+                    dialog_loading: false,
+                    window_resiz_org: null,
+                    dialogHeight: 0,
+                    dialog_d_value: 150,
+                    tests_table_data: null,
+                    date_time_range_options: {
+                        shortcuts: [
+                            {
+                                text: "最近一周",
+                                onClick: function(picker) {
+                                    const end = new Date();
+                                    const start = new Date();
+                                    start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                                    picker.$emit('pick', [start, end]);
+                                }
+                            },
+                            {
+                                text: "最近一个月",
+                                onClick: function(picker) {
+                                    const end = new Date();
+                                    const start = new Date();
+                                    start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                                    picker.$emit('pick', [start, end]);
+                                }
+                            },
+                            {
+                                text: "最近三个月",
+                                    onClick: function(picker) {
+                                    const end = new Date();
+                                    const start = new Date();
+                                    start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+                                    picker.$emit('pick', [start, end]);
+                                }
+                            }
+                        ]
+                    }
+                };
+            },
+            mounted: function() {
+                const end = new Date();
+                const start = new Date();
+                start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+                this.date_time_range = [datetimeFormat(start, "yyyy-MM-dd hh:mm:ss"),
+                                        datetimeFormat(end, "yyyy-MM-dd hh:mm:ss")];
+                this.onSum(this.sum_key);
+
+                let that = this;
+                function getInfoComboData(c) {
+                    v_requests(that, "getTopsComboData", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.data) {
+                                eval("that.dialog_" + c + "_options = obj.data");
+                            }
+                            eval("that.dialog_" + c + "_options.splice(0, 0, { label: '全部', value: '' })");
+                        }).catch(err => {
+                            alert(err);
+                        });
+                    }, function(err) {
+                        alert(err);
+                    }, { combo: c });
+                }
+                getInfoComboData("workshop");
+                getInfoComboData("worktype");
+                getInfoComboData("position");
+
+                this.window_resize_org = window.onresize;
+                window.onresize = function() {
+                    that.dialogHeight = $("main.el-main").height() - that.dialog_d_value;
+                };
+            },
+            computed: {
+                dialogTableHeight: function() {
+                    return this.dialogHeight - 100;
+                }
+            },
+            methods: {
+                onSum: function(key) {
+                    if(this.date_time_range.length != 2) {
+                        alert("请选择日期范围。");
+                        return;
+                    }
+
+                    let that = this;
+                    v_requests(that, "getTestsInfos", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj) {
+                                that.catalogues = obj.catalogues;
+                            }
+                        }).catch(err => {
+                            alert(err);
+                        });
+                    }, function(err) {
+                        alert(err);
+                    }, {
+                        key: key,
+                        time_start: that.date_time_range[0],
+                        time_end: that.date_time_range[1]
+                    });
+                },
+                makeChartData: function(activeNames) {
+                    let cur_cata = this.catalogues.find(i => i.cata_id == activeNames);
+                    if(!cur_cata) return undefined;
+
+                    let cur_chart = cur_cata.cata_charts;
+                    let data_arr = [];
+                    for(let d of cur_chart) {
+                        let date_str = d.stat_date.split("-");
+                        data_arr.push([(new Date(Date.UTC(date_str[0], Number.parseInt(date_str[1]) - 1, date_str[2]))).getTime(), d.paper_count]);
+                    }
+                    return data_arr;
+                },
+                onCollapseChange: function(activeNames) {
+                    if(!activeNames)
+                        return;
+
+                    let that = this;
+                    this.$refs.sum_collapse.$nextTick(function() {
+                        var charts = Highcharts.chart("chart-" + activeNames, {
+                            credits: {
+                                enabled: false
+                            },
+                            xAxis: {
+                                type: "datetime",
+                                title: {
+                                    text: "时间（天）"
+                                },
+                                labels: {
+                                    formatter: function() {
+                                        let d = new Date();
+                                        d.setTime(this.value);
+                                        return datetimeFormat(d, "yyyy-MM-dd");
+                                    },
+                                    step: 1
+                                },
+                                tickInterval: 24 * 3600 * 1000
+                            },
+                            yAxis: {
+                                title: {
+                                    text: "练习总数"
+                                }
+                            },
+                            title: {
+                                text: that.date_time_range[0] + " 至 " + that.date_time_range[1] + " 练习情况"
+                            },
+                            legend: {
+                                enabled: false
+                            },
+                            series: [{
+                                name: "练习次数",
+                                type: "column",
+                                data: that.makeChartData(activeNames)
+                            }],
+                            tooltip: {
+                                dateTimeLabelFormats: {
+                                    millisecond: "%Y年%m月%d日 %H:%M:%S.%L",
+                                    second: "%Y年%m月%d日 %H:%M:%S",
+                                    minute: "%Y年%m月%d日 %H:%M",
+                                    hour: "%Y年%m月%d日 %H:%M",
+                                    day: "%Y年%m月%d日",
+                                    week: "%Y年%m月%d日，%A",
+                                    month: "%Y年%m月",
+                                    year: "%Y"
+                                }
+                            }
+                        });
+                    });
+                },
+                onSumTypeChange: function(label) {
+                    this.onSum(label);
+                },
+                onWorkShopChange: function(val) {
+                    let that = this;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.worktypes && obj.positions) {
+                                let org_worktype = that.dialog_worktype;
+                                that.dialog_worktype_options = [{ label: "全部", value: "" }].concat(obj.worktypes);
+                                that.$refs.cb_worktypes.$nextTick(function() {
+                                    if(!obj.worktypes.find(item => item.value == org_worktype))
+                                        that.dialog_worktype = "";
+                                });
+
+                                let org_position = that.dialog_position;
+                                that.dialog_position_options = [{ label: "全部", value: "" }].concat(obj.positions);
+                                that.$refs.cb_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.dialog_position = "";
+                                });
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        workshops: that.dialog_workshop
+                    });
+                },
+                onWorkTypeChange: function(val) {
+                    let that = this;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.positions) {
+                                let org_position = that.dialog_position;
+                                that.dialog_position_options = [{ label: "全部", value: "" }].concat(obj.positions);
+                                that.$refs.cb_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.dialog_position = "";
+                                });
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        worktypes: that.dialog_worktype
+                    });
+                },
+                onShowSumDetailDialog: function() {
+                    this.dialog_workshop = "";
+                    this.dialog_worktype = "";
+                    this.dialog_position = "";
+                    this.dialogHeight = $("main.el-main").height() - this.dialog_d_value;
+                    console.log(this.dialogHeight);
+                    this.sum_dialog_visible = true;
+                },
+                onLookup: function() {
+                    let that = this;
+                    this.dialog_loading = true;
+                    v_requests(that, "getTestsSumDetail", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj) {
+                                that.tests_table_data = obj;
+                                that.$refs.sum_detail_table.$nextTick(function() {
+                                    that.dialog_loading = false;
+                                });
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.dialog_loading = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.dialog_loading = false;
+                    }, {
+                        time_start: that.date_time_range[0],
+                        time_end: that.date_time_range[1],
+                        workshop: that.dialog_workshop,
+                        worktype: that.dialog_worktype,
+                        position: that.dialog_position
+                    });
+                },
+                onExport: function() {
+                    var wb = XLSX.utils.table_to_book(document.querySelector("#tests_detail"));
+                    var wbout = XLSX.write(wb, { bookType: "xlsx", bookSST: true, type: "array" });
+                    try {
+                        let ws_name = this.dialog_workshop_options.find(item => item.value == this.dialog_workshop);
+                        ws_name = (ws_name.value == "" ? "" : ws_name.label);
+                        let wt_name = this.dialog_worktype_options.find(item => item.value == this.dialog_worktype);
+                        wt_name = (wt_name.value == "" ? "" : wt_name.label);
+                        let ps_name = this.dialog_position_options.find(item => item.value == this.dialog_position);
+                        ps_name = (ps_name.value == "" ? "" : ps_name.label);
+
+                        saveAs(new Blob([wbout], { type: "application/octet-stream" }),  ws_name + wt_name + ps_name + "练习详情.xlsx");
+                    }
+                    catch(e) {
+                        alert(e, wbout);
+                    }
+                }
+            },
+            template: `
+                <table style="width: 100%; height: 100%">
+                    <tr>
+                        <td style="display: flex; flex-direction: row; justify-content: center">
+                            时间范围：
+                            <el-date-picker
+                                v-model="date_time_range"
+                                type="datetimerange"
+                                range-separator="-"
+                                start-placeholder="开始时间"
+                                end-placeholder="结束时间"
+                                size="mini"
+                                :picker-options="date_time_range_options"
+                                style="margin-right: 25px"
+                                format="yyyy年MM月dd日 HH:mm:ss"
+                                value-format="yyyy-MM-dd HH:mm:ss"
+                            >
+                            </el-date-picker>
+                            汇总方式：
+                            <el-radio-group
+                                v-model="sum_key"
+                                size="mini"
+                                @change="onSumTypeChange"
+                                style="margin-right: 25px"
+                            >
+                                <el-radio-button label="车间"></el-radio-button>
+                                <el-radio-button label="工种"></el-radio-button>
+                                <el-radio-button label="职名"></el-radio-button>
+                                <el-radio-button label="题库类别"></el-radio-button>
+                            </el-radio-group>
+                            <el-button type="primary" size="mini" @click="onShowSumDetailDialog">查看、导出详情</el-button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="display: flex; flex-direction: row; justify-content: center">
+                            <el-collapse
+                                v-model="activated"
+                                style="width: 70%"
+                                accordion
+                                @change="onCollapseChange"
+                                ref="sum_collapse"
+                            >
+                                <el-collapse-item
+                                    v-for="(item, index) in catalogues"
+                                    :key="item.cata_id"
+                                    :title="item.cata_name"
+                                    :name="item.cata_id"
+                                >
+                                    {% verbatim %}
+                                    <span style="background-color: silver">
+                                        最高通过率：{{ item.cata_summaries[0].max_pass_rate * 100 }}%&nbsp;&nbsp;&nbsp;&nbsp;
+                                        最低通过率：{{ item.cata_summaries[0].min_pass_rate * 100 }}%&nbsp;&nbsp;&nbsp;&nbsp;
+                                        个人最高练习数：{{ item.cata_summaries[0].max_test_count }}次&nbsp;&nbsp;&nbsp;&nbsp;
+                                        个人最低练习数：{{ item.cata_summaries[0].min_test_count }}次&nbsp;&nbsp;&nbsp;&nbsp;
+                                    </span>
+                                    <div :id="'chart-' + item.cata_id" style="width: 100%; height: 250px">
+                                    </div>
+                                    {% endverbatim %}
+                                </el-collapse-item>
+                            </el-collapse>
+                            <el-dialog
+                                title="练习详情查询、导出"
+                                :visible.sync="sum_dialog_visible"
+                                :height="dialogHeight"
+                            >
+                                <table style="margin: 0; padding: 0; width: 100%; height: 100%">
+                                    <tr>
+                                        <td style="display: flex; flex-direction: row; justify-content: center">
+                                            车间：<el-select
+                                                        ref="cb_workshops"
+                                                        size="mini"
+                                                        :disabled="dialog_loading"
+                                                        v-model="dialog_workshop"
+                                                        placeholder="请选择车间"
+                                                        style="margin-right: 25px; width: 110px"
+                                                        @change="onWorkShopChange"
+                                            >
+                                                <el-option
+                                                    v-for="item in dialog_workshop_options"
+                                                    :key="item.value"
+                                                    :label="item.label"
+                                                    :value="item.value"
+                                                ></el-option>
+                                            </el-select>
+                                            工种：<el-select
+                                                    ref="cb_worktypes"
+                                                    size="mini"
+                                                    :disabled="dialog_loading"
+                                                    v-model="dialog_worktype"
+                                                    placeholder="请选择工种"
+                                                    style="margin-right: 25px; width: 110px"
+                                                    @change="onWorkTypeChange"
+                                            >
+                                                <el-option
+                                                    v-for="item in dialog_worktype_options"
+                                                    :key="item.value"
+                                                    :label="item.label"
+                                                    :value="item.value"
+                                                ></el-option>
+                                            </el-select>
+                                            职名：<el-select
+                                                    ref="cb_positions"
+                                                    size="mini"
+                                                    :disabled="dialog_loading"
+                                                    v-model="dialog_position"
+                                                    placeholder="请选择职名"
+                                                    style="margin-right: 25px; width: 110px"
+                                            >
+                                                <el-option
+                                                    v-for="item in dialog_position_options"
+                                                    :key="item.value"
+                                                    :label="item.label"
+                                                    :value="item.value"
+                                                ></el-option>
+                                            </el-select>
+                                            <el-button
+                                                icon="el-icon-search"
+                                                size="mini"
+                                                type="primary"
+                                                :loading="dialog_loading"
+                                                @click="onLookup"
+                                            >
+                                                查看
+                                            </el-button>
+                                            <el-button
+                                                icon="el-icon-search"
+                                                size="mini"
+                                                type="primary"
+                                                :loading="dialog_loading"
+                                                @click="onExport"
+                                            >
+                                                导出
+                                            </el-button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 0; margin: 0; display: flex; flex-direction: row; justify-content: center">
+                                            <el-table
+                                                :height="dialogTableHeight"
+                                                :data="tests_table_data"
+                                                ref="sum_detail_table"
+                                                id="tests_detail"
+                                            >
+                                                <el-table-column
+                                                    prop="name"
+                                                    label="姓名"
+                                                >
+                                                </el-table-column>
+                                                <el-table-column
+                                                    prop="dep_name"
+                                                    label="车间"
+                                                >
+                                                </el-table-column>
+                                                <el-table-column
+                                                    prop="type_name"
+                                                    label="工种"
+                                                >
+                                                </el-table-column>
+                                                <el-table-column
+                                                    prop="position_name"
+                                                    label="职名"
+                                                >
+                                                </el-table-column>
+                                                <el-table-column
+                                                    prop="count"
+                                                    label="练习次数"
+                                                >
+                                                </el-table-column>
+                                            </el-table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </el-dialog>
+                        </td>
+                    </tr>
+                </table>
+            `
+        };
         var ManageExams = {
             data: function() {
                 return {
@@ -1278,7 +2098,7 @@
                         });
                     }, function(err) {
                         alert(err);
-                    }, { type_id: val});
+                    }, { type_id: val });
                 },
                 onPaperSelected: function(val) {
                     this.selected_papers.splice(0, this.selected_papers.length);
@@ -1763,24 +2583,48 @@
                         }
                     }
                 },
-                onWorkShopSelected: function(val) {
+                onWorkShopSelected: function(selection, row) {
                     var that = this;
                     this.selected_workshops.splice(0, this.selected_workshops.length);
-                    for(var i in val)
-                        this.selected_workshops.push(val[i].value);
+                    for(let r of selection)
+                        this.selected_workshops.push(r.value);
 
                     v_requests(that, "getDWPConstraint", function(result) {
-                        //alert(JSON.stringify(result));
                         result.json().then(obj => {
                             if(obj.errmsg) 
                                 throw obj.errmsg;
                             if(obj.worktypes && obj.positions) {
+                                that.worktypes = obj.worktypes;
+                                that.$refs.table_worktypes.$nextTick(function(){
+                                    let selected_worktypes_copy = objectDeepCopy(that.selected_worktypes);
+                                    for(let s of selected_worktypes_copy) {
+                                        if(that.worktypes.find(w => w.value == s))
+                                            that.$refs.table_worktypes.toggleRowSelection(that.worktypes.find(w => w.value == s), true);
+                                        else
+                                            that.selected_worktypes.splice(that.selected_worktypes.findIndex(val => val == s), 1);
+                                    }
+                                });
+
+                                //that.selected_positions.splice(0, that.selected_positions.length);
+                                that.positions = obj.positions;
+                                that.$refs.table_positions.$nextTick(function(){
+                                    let selected_positions_copy = objectDeepCopy(that.selected_positions);
+                                    for(let s of selected_positions_copy) {
+                                        if(that.positions.find(w => w.value == s))
+                                            that.$refs.table_positions.toggleRowSelection(that.positions.find(w => w.value == s), true);
+                                        else
+                                            that.selected_positions.splice(that.selected_positions.findIndex(val => val == s), 1);
+                                    }
+                                });
+                            } else
+                                throw "您的选择有误。";
+                            /*if(obj.worktypes && obj.positions) {
                                 that.selected_worktypes.splice(0, that.selected_worktypes.length);
                                 that.worktypes = obj.worktypes;
                                 that.selected_positions.splice(0, that.selected_positions.length);
                                 that.positions = obj.positions;
                             } else
-                                throw "服务器返回异常。";
+                                throw "服务器返回异常。";*/
                         }).catch(err => {
                             alert(JSON.stringify(err));
                         });
@@ -1788,21 +2632,30 @@
                         alert(JSON.stringify(err));
                     }, { workshops: that.selected_workshops.join() });
                 },
-                onWorkTypeSelected: function(val) {
+                onWorkTypeSelected: function(selection, row) {
                     var that = this;
                     this.selected_worktypes.splice(0, this.selected_worktypes.length);
-                    for(var i in val)
-                        this.selected_worktypes.push(val[i].value);
+                    for(let r of selection)
+                        this.selected_worktypes.push(r.value);
 
                     v_requests(that, "getDWPConstraint", function(result) {
                         result.json().then(obj => {
                             if(obj.errmsg) 
                                 throw obj.errmsg;
                             if(obj.positions) {
-                                that.selected_positions.splice(0, that.selected_positions.length);
+                                //that.selected_positions.splice(0, that.selected_positions.length);
                                 that.positions = obj.positions;
+                                that.$refs.table_positions.$nextTick(function(){
+                                    let selected_positions_copy = objectDeepCopy(that.selected_positions);
+                                    for(let s of selected_positions_copy) {
+                                        if(that.positions.find(w => w.value == s))
+                                            that.$refs.table_positions.toggleRowSelection(that.positions.find(w => w.value == s), true);
+                                        else
+                                            that.selected_positions.splice(that.selected_positions.findIndex(val => val == s), 1);
+                                    }
+                                });
                             } else
-                                throw "服务器返回异常。";
+                                throw "您的选择有误。";
                         }).catch(err => {
                             alert(JSON.stringify(err));
                         });
@@ -1810,10 +2663,10 @@
                         alert(JSON.stringify(err));
                     }, { worktypes: that.selected_worktypes.join() });
                 },
-                onPositionSelected: function(val) {
+                onPositionSelected: function(selection, row) {
                     this.selected_positions.splice(0, this.selected_positions.length);
-                    for(var i in val)
-                        this.selected_positions.push(val[i].value);
+                    for(let r of selection)
+                        this.selected_positions.push(r.value);
                 },
                 initPaperTypeCombo: function(init_type) {
                     var that = this;
@@ -1973,7 +2826,8 @@
                                     height="500px"
                                     style="width: 192px"
                                     border
-                                    @selection-change="onWorkShopSelected"
+                                    @select="onWorkShopSelected"
+                                    @select-all="onWorkShopSelected"
                                     ref="table_workshops"
                                 >
                                     <el-table-column type="selection" width="40px">
@@ -1989,7 +2843,8 @@
                                     height="500px"
                                     style="width: 192px"
                                     border
-                                    @selection-change="onWorkTypeSelected"
+                                    @select="onWorkTypeSelected"
+                                    @select-all="onWorkTypeSelected"
                                     ref="table_worktypes"
                                 >
                                     <el-table-column type="selection" width="40px">
@@ -2005,7 +2860,8 @@
                                     height="500px"
                                     style="width: 242px"
                                     border
-                                    @selection-change="onPositionSelected"
+                                    @select="onPositionSelected"
+                                    @select-all="onPositionSelected"
                                     ref="table_positions"
                                 >
                                     <el-table-column type="selection" width="40px">
@@ -2779,56 +3635,837 @@
                 </table>
             `
         };
+        var ManageAccumulatePoints = {
+        };
+        var AccumulatePointsStatistics = {
+            data: function() {
+                return {
+                    date_time_range: [],
+                    only_rewarded: false,
+                    workshop: "",
+                    worktype: "",
+                    position: "",
+                    workshop_options: [],
+                    worktype_options: [],
+                    position_options: [],
+                    loading: false,
+                    table_data: [],
+                    detail_data: [],
+                    detail_title: "",
+                    table_title: "红包及积分汇总",
+                    table_height: undefined,
+                    window_resize_org: null,
+                    dialog_detail_visible: false,
+                    picker_options: {
+                        shortcuts: [{
+                            text: '最近一周',
+                            onClick: function(picker) {
+                                const end = new Date();
+                                const start = new Date();
+                                start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                                picker.$emit('pick', [start, end]);
+                            }
+                        }, {
+                            text: '最近一个月',
+                            onClick: function(picker) {
+                                const end = new Date();
+                                const start = new Date();
+                                start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                                picker.$emit('pick', [start, end]);
+                            }
+                        }, {
+                            text: '最近三个月',
+                            onClick: function(picker) {
+                                const end = new Date();
+                                const start = new Date();
+                                start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+                                picker.$emit('pick', [start, end]);
+                            }
+                        }]
+                    }
+                };
+            },
+            mounted: function() {
+                this.resizeTable();
+                let that = this;
+                function getComboData(c) {
+                    v_requests(that, "getTopsComboData", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.data) {
+                                eval("that." + c + "_options = obj.data");
+                            }
+                            eval("that." + c + "_options.splice(0, 0, { label: '全部', value: '' })");
+                        }).catch(err => {
+                            alert(err);
+                        });
+                    }, function(err) {
+                        alert(err);
+                    }, { combo: c });
+                }
+                getComboData("workshop");
+                getComboData("worktype");
+                getComboData("position");
+                
+                this.window_resize_org = window.onresize;
+                window.onresize = function() {
+                    that.resizeTable();
+                };
+            },
+            unmounted: function() {
+                window.onresize = this.window_resize_org;
+            },
+            methods: {
+                setTableTitle: function() {
+                    if(this.date_time_range.length != 2)
+                        return;
+
+                    let that = this;
+                    let time_str = this.date_time_range[0] + "至" + this.date_time_range[1];
+                    
+                    let info_arr = [];
+                    if(this.workshop != "")
+                        info_arr.push(this.workshop_options.find(item => item.value == that.workshop).label);
+                    if(this.worktype != "")
+                        info_arr.push(this.worktype_options.find(item => item.value == that.worktype).label);
+                    if(this.position != "")
+                        info_arr.push(this.position_options.find(item => item.value == that.position).label);
+
+                    this.table_title = time_str + " " + info_arr.join("●") + " 红包及积分汇总";
+                },
+                onWorkShopChange: function(val) {
+                    let that = this;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.worktypes && obj.positions) {
+                                let org_worktype = that.worktype;
+                                that.worktype_options = [{ label: "全部", value: "" }].concat(obj.worktypes);
+                                that.$refs.cb_worktypes.$nextTick(function() {
+                                    if(!obj.worktypes.find(item => item.value == org_worktype))
+                                        that.worktype = "";
+                                });
+
+                                let org_position = that.position;
+                                that.position_options = [{ label: "全部", value: "" }].concat(obj.positions);
+                                that.$refs.cb_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.position = "";
+                                });
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        workshops: val
+                    });
+                    this.setTableTitle();
+                },
+                onWorkTypeChange: function(val) {
+                    let that = this;
+                    v_requests(that, "getDWPConstraint", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            if(obj.positions) {
+                                let org_position = that.position;
+                                that.position_options = [{ label: "全部", value: "" }].concat(obj.positions);
+                                that.$refs.cb_positions.$nextTick(function() {
+                                    if(!obj.positions.find(item => item.value == org_position))
+                                        that.position = "";
+                                });
+                            } else
+                                throw "您的选择有误。";
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        worktypes: val
+                    });
+                    this.setTableTitle();
+                },
+                onPositionChange: function(val) {
+                    this.setTableTitle();
+                },
+                onDateTimeRangeChange: function(val) {
+                    this.setTableTitle();
+                },
+                sumRewards: function(exporting = false) {
+                    if(this.date_time_range.length != 2) {
+                        alert("请选择日期范围。");
+                        return;
+                    }
+
+                    this.$refs.main_table.$nextTick(() => this.resizeTable());
+                    let that = this;
+                    this.loading = true;
+                    v_requests(that, "getRPandAPSum", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            that.table_data = obj;
+                            that.$refs.main_table.$nextTick(function() {
+                                that.loading = false;
+                                if(exporting)
+                                    that.exportMainTable();
+                            });
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.loading = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.loading = false;
+                    }, {
+                        workshop: that.workshop,
+                        worktype: that.worktype,
+                        position: that.position,
+                        time_start: that.date_time_range[0],
+                        time_end: that.date_time_range[1],
+                        only_rewarded: (that.only_rewarded ? "1" : "0")
+                    });
+                },
+                onSum: function() {
+                    this.sumRewards(false);
+                },
+                exportMainTable: function() {
+                    var wb = XLSX.utils.table_to_book(document.querySelector("#sum_table"));
+                    var wbout = XLSX.write(wb, { bookType: "xlsx", bookSST: true, type: "array" });
+                    try {
+                        saveAs(new Blob([wbout], { type: "application/octet-stream" }), this.table_title + ".xlsx");
+                    }
+                    catch(e) {
+                        alert(e, wbout);
+                    }
+                },
+                onExport: function() {
+                    if(this.table_data == null || this.table_data == undefined || this.table_data.length == 0)
+                        this.sumRewards(true);
+                    else
+                        this.exportMainTable();
+                },
+                resizeTable: function() {
+                    this.table_height = $("main.el-main").height() - 60;
+                },
+                getRedPacketDetail: function(row, rp) {
+                    let that = this;
+                    v_requests(that, "getRPDetail", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            that.detail_data = obj;
+                            console.log(JSON.stringify(row));
+                            that.detail_title = row.workshop + " - " + row.worktype + " - " + row.position + " - " + row.name + (rp == "1" ? "红包" : "积分") + "明细";
+                            that.dialog_detail_visible = true;
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.loading = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.loading = false;
+                    }, {
+                        weixin_open_id: row.weixin_open_id,
+                        is_rp: rp,
+                        time_start: that.date_time_range[0],
+                        time_end: that.date_time_range[1]
+                    });
+                },
+                onShowRedPacket: function(row) {
+                    this.getRedPacketDetail(row, "1");
+                },
+                onShowAccumulatePoints: function(row) {
+                    this.getRedPacketDetail(row, "0");
+                },
+                onExportRPDetail: function() {
+                }
+            },
+            template: `
+                <table style="width: 100%; height: 100%">
+                    <tr style="height: 40px">
+                        <td style="display: flex; flex-direction: row; justify-content: center; align-items: center">
+                            时间范围：
+                            <el-date-picker
+                                v-model="date_time_range"
+                                type="datetimerange"
+                                :picker-options="picker_options"
+                                range-separator="~"
+                                start-placeholder="开始时间"
+                                end-placeholder="结束时间"
+                                size="mini"
+                                style="margin-right: 20px"
+                                format="yyyy年MM月dd日 HH:mm:ss"
+                                value-format="yyyy-MM-dd HH:mm:ss"
+                                @change="onDateTimeRangeChange"
+                                :disabled="loading"
+                            >
+                            </el-date-picker>
+                            车间：
+                            <el-select
+                                v-model="workshop"
+                                placeholder="车间"
+                                size="mini"
+                                style="margin-right: 20px; width: 110px"
+                                :disabled="loading"
+                                ref="cb_workshops"
+                                @change="onWorkShopChange"
+                            >
+                                <el-option
+                                    v-for="item in workshop_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                >
+                                </el-option>
+                            </el-select>
+                            工种：
+                            <el-select
+                                v-model="worktype"
+                                placeholder="工种"
+                                size="mini"
+                                style="margin-right: 20px; width: 110px"
+                                :disabled="loading"
+                                ref="cb_worktypes"
+                                @change="onWorkTypeChange"
+                            >
+                                <el-option
+                                    v-for="item in worktype_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                >
+                                </el-option>
+                            </el-select>
+                            职名：
+                            <el-select
+                                v-model="position"
+                                placeholder="职名"
+                                size="mini"
+                                style="margin-right: 20px; width: 110px"
+                                :disabled="loading"
+                                ref="cb_positions"
+                                @change="onPositionChange"
+                            >
+                                <el-option
+                                    v-for="item in position_options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value"
+                                >
+                                </el-option>
+                            </el-select>
+                            <el-checkbox v-model="only_rewarded" style="margin-right: 20px" :disabled="loading">仅显示有奖励</el-checkbox>
+                            <el-button
+                                type="primary"
+                                size="mini"
+                                icon="el-icon-search"
+                                :loading="loading"
+                                @click="onSum"
+                            >
+                                汇总
+                            </el-button>
+                            <el-button
+                                type="primary"
+                                size="mini"
+                                icon="el-icon-download"
+                                :loading="loading"
+                                @click="onExport"
+                            >
+                                导出
+                            </el-button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 100%; display: flex; flex-direction: row; justify-content: center; align-items: flex-start">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <el-table
+                                            :data="table_data"
+                                            border
+                                            :height="table_height"
+                                            v-loading="loading"
+                                            element-loading-text="正在玩了命地加载……"
+                                            element-loading-spinner="el-icon-loading"
+                                            element-loading-background="rgba(0, 0, 0, 0, 0.8)"
+                                            ref="main_table"
+                                            id="sum_table"
+                                            size="small"
+                                        >
+                                            <el-table-column
+                                                :label="table_title"
+                                                align="center"
+                                            >
+                                                <el-table-column
+                                                    label="姓名"
+                                                    prop="name"
+                                                    width="120"
+                                                    align="center"
+                                                >
+                                                </el-table-column>
+                                                <el-table-column
+                                                    label="车间"
+                                                    prop="workshop"
+                                                    width="220"
+                                                    align="center"
+                                                >
+                                                </el-table-column>
+                                                <el-table-column
+                                                    label="工种"
+                                                    prop="worktype"
+                                                    width="200"
+                                                    align="center"
+                                                >
+                                                </el-table-column>
+                                                <el-table-column
+                                                    label="职名"
+                                                    prop="position"
+                                                    width="220"
+                                                    align="center"
+                                                >
+                                                </el-table-column>
+                                                <el-table-column
+                                                    label="红包"
+                                                    width="120"
+                                                    align="center"
+                                                >
+                                                    <template slot-scope="scope">
+                                                        <el-button
+                                                            v-if="scope.row.rp_amount != 0.00"
+                                                            type="text"
+                                                            size="medium"
+                                                            @click="onShowRedPacket(scope.row)"
+                                                        >
+                                                            {% verbatim %}
+                                                            {{ scope.row.rp_amount }}
+                                                            {% endverbatim %}
+                                                        </el-button>
+                                                        <span v-else>
+                                                            {% verbatim %}
+                                                            {{ scope.row.rp_amount }}
+                                                            {% endverbatim %}
+                                                        </span>
+                                                    </template>
+                                                </el-table-column>
+                                                <el-table-column
+                                                    label="积分"
+                                                    prop="ap_amount"
+                                                    width="120"
+                                                    align="center"
+                                                >
+                                                    <template slot-scope="scope">
+                                                        <el-button
+                                                            v-if="scope.row.ap_amount != 0.00"
+                                                            type="text"
+                                                            size="medium"
+                                                            @click="onShowAccumulatePoints(scope.row)"
+                                                        >
+                                                            {% verbatim %}
+                                                            {{ scope.row.ap_amount }}
+                                                            {% endverbatim %}
+                                                        </el-button>
+                                                        <span v-else>
+                                                            {% verbatim %}
+                                                            {{ scope.row.ap_amount }}
+                                                            {% endverbatim %}
+                                                        </span>
+                                                    </template>
+                                                </el-table-column>
+                                            </el-table-column>
+                                        </el-table>
+                                        <el-dialog
+                                            :visible.sync="dialog_detail_visible"
+                                            title="奖励详情"
+                                            width="40%"
+                                            height="700"
+                                        >
+                                            <el-table
+                                                width="100%"
+                                                :data="detail_data"
+                                                border
+                                                ref="detail_table"
+                                                height="550"
+                                            >
+                                                <el-table-column
+                                                    :label="detail_title"
+                                                    align="center"
+                                                >
+                                                    <el-table-column
+                                                        label="金额/分值"
+                                                        prop="amount"
+                                                        width="100"
+                                                        align="center"
+                                                    >
+                                                    </el-table-column>
+                                                    <el-table-column
+                                                        label="类型"
+                                                        prop="reward_type"
+                                                        width="110"
+                                                        align="center"
+                                                    >
+                                                    </el-table-column>
+                                                    <el-table-column
+                                                        label="来源"
+                                                        prop="source"
+                                                        align="center"
+                                                    >
+                                                    </el-table-column>
+                                                    <el-table-column
+                                                        label="日期"
+                                                        prop="date_time"
+                                                        align="center"
+                                                    >
+                                                    </el-table-column>
+                                                </el-table-column>
+                                            </el-table>
+                                            <span slot="footer">
+                                                <el-button size="mini" type="primary" @click="onExportRPDetail">导出</el-button>
+                                            </span>
+                                        </el-dialog>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            `
+        };
+        var ManageNoticeBoard = {
+            data: function() {
+                return {
+                    loading: false,
+                    date_time_range: [],
+                    table_data: null,
+                    table_height: null,
+                    dialog_mod_visible: false,
+                    dialog_mod_title: "",
+                    d_content: "",
+                    d_color: "#000000",
+                    d_date_time_range: [],
+                    d_nb_id: null,
+                    picker_options: {
+                        shortcuts: [{
+                            text: '最近一周',
+                            onClick: function(picker) {
+                                const end = new Date();
+                                const start = new Date();
+                                start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                                picker.$emit('pick', [start, end]);
+                            }
+                        }, {
+                            text: '最近一个月',
+                            onClick: function(picker) {
+                                const end = new Date();
+                                const start = new Date();
+                                start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                                picker.$emit('pick', [start, end]);
+                            }
+                        }, {
+                            text: '最近三个月',
+                            onClick: function(picker) {
+                                const end = new Date();
+                                const start = new Date();
+                                start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+                                picker.$emit('pick', [start, end]);
+                            }
+                        }]
+                    }
+                };
+            },
+            mounted: function() {
+                this.window_resize_org = window.onresize;
+                let that = this;
+                window.onresize = function() {
+                    that.resizeTable();
+                };
+                that.resizeTable();
+            },
+            unmounted: function() {
+                window.onresize = this.window_resize_org;
+            },
+            methods: {
+                resizeTable: function() {
+                    this.table_height = $("main.el-main").height() - 60;
+                },
+                onLookup: function() {
+                    if(this.date_time_range.length != 2) {
+                        alert("请选择发布公告的日期。");
+                        return;
+                    }
+
+                    let that = this;
+                    v_requests(that, "getNoticeBoards", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            that.table_data = obj;
+                            that.resizeTable();
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                            that.loading = false;
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                        that.loading = false;
+                    }, {
+                        time_start: that.date_time_range[0],
+                        time_end: that.date_time_range[1]
+                    });
+                },
+                editNB: function(row) {
+                    this.dialog_mod_title = "公告牌修改";
+                    this.d_color = row.color;
+                    this.d_content = row.content;
+                    this.d_date_time_range = [ row.date_start.replace('年', '-').replace('月', '-').replace('日', ''),
+                                               row.date_end.replace('年', '-').replace('月', '-').replace('日', '') ];
+                    this.d_nb_id = row.nb_id;
+                    this.dialog_mod_visible = true;
+                },
+                deleteNB: function(row) {
+                    if(!confirm("确认删除吗？"))
+                        return;
+
+                    let that = this;
+                    v_requests(that, "deleteNoticeBoard", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            alert("删除成功。");
+                            that.onLookup();
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        nb_id: row.nb_id
+                    });
+                },
+                onPublish: function() {
+                    this.dialog_mod_title = "公告牌添加";
+                    this.d_color = "#000000";
+                    this.d_content = "";
+
+                    let now = new Date();
+                    let later = new Date(now.getTime());
+                    later.setTime(later.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+                    this.d_date_time_range = [ datetimeFormat(now, "yyyy-MM-dd hh:mm:ss"),
+                                               datetimeFormat(later, "yyyy-MM-dd hh:mm:ss") ];
+
+                    this.dialog_mod_visible = true;
+                },
+                onSaveNB: function() {
+                    if(this.d_date_time_range.length != 2) {
+                        alert("请选择有效日期。");
+                        return;
+                    }
+
+                    let that = this;
+                    v_requests(that, "saveNoticeBoard", function(result) {
+                        result.json().then(obj => {
+                            if(obj.errmsg) 
+                                throw obj.errmsg;
+                            alert("保存成功。");
+                            that.dialog_mod_visible = false;
+                            that.onLookup();
+                        }).catch(err => {
+                            alert(JSON.stringify(err));
+                        });
+                    }, function(err) {
+                        alert(JSON.stringify(err));
+                    }, {
+                        nb_id: that.d_nb_id,
+                        content: that.d_content,
+                        color: that.d_color,
+                        date_start: that.d_date_time_range[0],
+                        date_stop: that.d_date_time_range[1]
+                    });
+                }
+            },
+            template: `
+                <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flext-start; align-items: center">
+                    <div style="display:flex; flex-direction: row">
+                        发布日期：
+                        <el-date-picker
+                            v-model="date_time_range"
+                            type="datetimerange"
+                            :picker-options="picker_options"
+                            range-separator="~"
+                            start-placeholder="开始时间"
+                            end-placeholder="结束时间"
+                            size="mini"
+                            style="margin-right: 20px"
+                            format="yyyy年MM月dd日 HH:mm:ss"
+                            value-format="yyyy-MM-dd HH:mm:ss"
+                            :disabled="loading"
+                        >
+                        </el-date-picker>
+                        <el-button size="mini" type="primary" @click="onLookup">查看</el-button>
+                        <el-button size="mini" type="warning" @click="onPublish">发布公告</el-button>
+                    </div>
+                    <div style="flex-grow: 1; margin-top: 25px">
+                        <el-table
+                            :data="table_data"
+                            border
+                            :height="table_height"
+                            v-loading="loading"
+                            element-loading-text="正在玩了命地加载……"
+                            element-loading-spinner="el-icon-loading"
+                            element-loading-background="rgba(0, 0, 0, 0, 0.8)"
+                            ref="main_table"
+                            id="nb_table"
+                            size="small"
+                        >
+                            <el-table-column
+                                label="公告内容"
+                                prop="content"
+                                width="250"
+                            >
+                            </el-table-column>
+                            <el-table-column
+                                label="文字色彩"
+                                width="110"
+                                align="center"
+                            >
+                                <template slot-scope="scope">
+                                    {% verbatim %}
+                                    <div><span :style="'color:' + scope.row.color + '; font-size: 45px'">■</span>{{ scope.row.color }}</div>
+                                    {% endverbatim %}
+                                </template>
+                            </el-table-column>
+                            <el-table-column
+                                label="有效期"
+                                width="350"
+                                align="center"
+                            >
+                                <template slot-scope="scope">
+                                    {% verbatim %}
+                                    <div>{{ scope.row.date_start }}至{{ scope.row.date_end }}</div>
+                                    {% endverbatim %}
+                                </template>
+                            </el-table-column>
+                            <el-table-column
+                                label="操作"
+                                width="150"
+                                align="center"
+                            >
+                                <template slot-scope="scope">
+                                    <el-button type="primary" size="mini" @click="editNB(scope.row)">编辑</el-button>
+                                    <el-button type="danger" size="mini" @click="deleteNB(scope.row)">删除</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        <el-dialog
+                            :visible.sync="dialog_mod_visible"
+                            :title="dialog_mod_title"
+                            width="650px"
+                        >
+                            <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; align-items: center">
+                                <div>
+                                    有效期：
+                                    <el-date-picker
+                                        v-model="d_date_time_range"
+                                        type="datetimerange"
+                                        :picker-options="picker_options"
+                                        range-separator="~"
+                                        start-placeholder="开始时间"
+                                        end-placeholder="结束时间"
+                                        size="mini"
+                                        style="margin-right: 20px"
+                                        format="yyyy年MM月dd日 HH:mm:ss"
+                                        value-format="yyyy-MM-dd HH:mm:ss"
+                                        :disabled="loading"
+                                    >
+                                    </el-date-picker>
+                                    文字颜色：
+                                    <el-color-picker
+                                        size="mini"
+                                        v-model="d_color"
+                                        color-format="hex"
+                                    >
+                                    </el-color-picker>
+                                </div>
+                                <span style="align-self: flex-start">公告内容：</span>
+                                <el-input
+                                    type="textarea"
+                                    resize="none"
+                                    style="width: 630px"
+                                    v-model="d_content"
+                                >
+                                </el-input>
+                            </div>
+                            <span slot="footer">
+                                <el-button size="mini" type="primary" @click="onSaveNB">保存</el-button>
+                            </span>
+                        </el-dialog>
+                    </div>
+                </div>
+            `
+        };
+        var RPRulesAdd = {
+            template: `
+                <iframe src="https://rp.jingjingjing.wang/rp_rule_setting.html" style="width: 100%; height: 100%" frameborder=0></iframe>
+            `
+        };
+        var RPRulesEdit = {
+            template: `
+                <iframe src="https://rp.jingjingjing.wang/rp_rule_modify.html" style="width: 100%; height: 100%" frameborder=0></iframe>
+            `
+        };
+        var RPTypeEdit = {
+            template: `
+                <iframe src="https://rp.jingjingjing.wang/rp_rule_type_manage.html" style="width: 100%; height: 100%" frameborder=0></iframe>
+            `
+        };
+        var RPSummary = {
+            template: `
+                <iframe src="https://rp.jingjingjing.wang/rpsum.html" style="width: 100%; height: 100%" frameborder=0></iframe>
+            `
+        };
+        var RPStatistics = {
+            template: `
+                <iframe src="https://rp.jingjingjing.wang/monthlyrp.html" style="width: 100%; height: 100%" frameborder=0></iframe>
+            `
+        };
         new Vue({
             el: "#app",
             data: {
                 visible: false,
-                currentMain: ManageExams,
+                currentMain: Welcome,
                 asideMenuMap: {
+                    "welcome": Welcome,
                     "charts": Charts,
                     "tops": Tops,
                     "infos": Infos,
+                    "tests": Tests,
                     "manage-members": ManageMembers,
                     "import-members": ImportMembers,
                     "manage-exams": ManageExams,
                     "qbimport": QBImport,
                     "qbexport": QBExport,
-                    "qbedit": QBEdit
+                    "qbedit": QBEdit,
+                    "manage-accumulate-points": ManageAccumulatePoints,
+                    "accumulate-points-statistics": AccumulatePointsStatistics,
+                    "rp_rules_add": RPRulesAdd,
+                    "rp_rules_edit": RPRulesEdit,
+                    "rp_type_edit": RPTypeEdit,
+                    "rp_summary": RPSummary,
+                    "rp_statistics": RPStatistics,
+                    "manage-noticeboard": ManageNoticeBoard
                 }
             },
             methods: {
                 onAsideMenuSelected: function(key, keyPath) {
                     this.currentMain = this.asideMenuMap[key];
-                    var that = this;
                     console.log(key);
-                    switch(key) {
-                        case "charts":
-                            Vue.nextTick(function(){
-                                //v_requests("getWorkshopStat", {  });
-                                var options = {
-                                    title: {
-                                        text: "考试统计"
-                                    },
-                                    xAxis: {
-                                        categories: ["苹果", "香蕉", "橙子"]
-                                    },
-                                    yAxis: {
-                                        title: {
-                                            text: "吃水果个数"
-                                        }
-                                    },
-                                    series: [{
-                                        name: "小明",
-                                        data: [1, 0, 4]
-                                    }, {
-                                        name: "小红",
-                                        data: [5, 7, 3]
-                                    }]
-                                };
-                                var chart = Highcharts.chart("chart-container", options);
-                            });
-                            break;
-                    }
                 }
             },
         });
