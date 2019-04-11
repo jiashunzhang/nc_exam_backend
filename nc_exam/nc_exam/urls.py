@@ -17,8 +17,10 @@ Including another URLconf
 """
 from exam_admin import views as admin_views
 from django.contrib import admin
+from django.conf.urls import include, url
 from django.urls import path
 from main import views as main_views
+from jsonrpc.backend.django import api
 
 urlpatterns = [
     path('', main_views.weixin_main),
@@ -40,6 +42,13 @@ urlpatterns = [
     path('handin', main_views.handin),
     path('handinExam', main_views.handinExam),
     path('getUndoneExamCount', main_views.getUndoneExamCount),
+    path('signin', main_views.signin),
+    path('openTestRedPacket', main_views.openTestRedPacket),
+    path('getCurrentAccumulatePoints', main_views.getCurrentAccumulatePoints),
+    path('getMyWrongList', main_views.getMyWrongList),
+    path('getWrongAnswerDetail', main_views.getWrongAnswerDetail),
+    path('saveWrongNote', main_views.saveWrongNote),
+    path('getRPandAP', main_views.getRPandAP),
     path('admin/', admin.site.urls),
     path('exam_admin', admin_views.admin),
     path('getTopsComboData', admin_views.getTopsComboData),
@@ -63,5 +72,13 @@ urlpatterns = [
     path('modMember', admin_views.modMember),
     path('addMember', admin_views.addMember),
     path('getPaperImportLog', admin_views.getPaperImportLog),
-    path('getDWPConstraint', admin_views.getDWPConstraint)
+    path('getDWPConstraint', admin_views.getDWPConstraint),
+    path('getTestsInfos', admin_views.getTestsInfos),
+    path('getTestsSumDetail', admin_views.getTestsSumDetail),
+    path('getRPandAPSum', admin_views.getRPandAPSum),
+    path('getRPDetail', admin_views.getRPDetail),
+    path('getNoticeBoards', admin_views.getNoticeBoards),
+    path('saveNoticeBoard', admin_views.saveNoticeBoard),
+    path('deleteNoticeBoard', admin_views.deleteNoticeBoard),
+    url('api/jsonrpc', include(api.urls))
 ]

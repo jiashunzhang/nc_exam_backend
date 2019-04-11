@@ -68,6 +68,7 @@ class Members(models.Model):
     idcard = models.CharField(primary_key=True, max_length=18)
     position_id = models.ForeignKey(Position, on_delete=models.CASCADE, db_column='position_id')
     three_new = models.BooleanField()
+    allow_red_packet = models.BooleanField()
 
     def __str__(self):
         return self.name
@@ -213,3 +214,95 @@ class ExamQuestions(models.Model):
     class Meta:
         db_table = 'ExamQuestions'
 
+class RedPacketType(models.Model):
+    pt_id = models.AutoField(primary_key=True)
+    pt_name = models.CharField(max_length=20)
+
+    def __str__():
+        return 'Red packet is: ' + pt_name
+    
+    class Meta:
+        db_table = 'RedPacketType'
+
+class TestRedPackets(models.Model):
+    rp_id = models.AutoField(primary_key=True)
+    weixin_open_id = models.CharField(max_length=50)
+    amount = models.FloatField()
+    date_time = models.DateTimeField()
+    test_paper_id = models.ForeignKey(TestPapers, on_delete=models.CASCADE, db_column='test_paper_id')
+    red_packet_type_id = models.ForeignKey(RedPacketType, on_delete=models.CASCADE, db_column='red_packet_type_id')
+    
+    def __str__():
+        return 'Packet is: ' + str(rp_id)
+
+    class Meta:
+        db_table = 'TestRedPackets'
+
+class AccumulatePoints(models.Model):
+    weixin_open_id = models.CharField(primary_key=True, max_length=50)
+    points = models.FloatField()
+
+    def __str__():
+        return 'Point is: ' + str(points)
+
+    class Meta:
+        db_table = 'AccumulatePoints'
+
+class AccumulatePointsType(models.Model):
+    type_id = models.AutoField(primary_key=True)
+    type_name = models.CharField(max_length=20)
+    points = models.FloatField()
+    max_score = models.FloatField()
+    min_score = models.FloatField()
+
+    def __str__():
+        return 'Point is: ' + str(points)
+
+    class Meta:
+        db_table = 'AccumulatePointsType'
+
+class AccumulatePointsLog(models.Model):
+    ap_id = models.AutoField(primary_key=True)
+    points = models.FloatField()
+    test_paper_id = models.ForeignKey(TestPapers, on_delete=models.CASCADE, db_column='test_paper_id')
+    date_time = models.DateTimeField()
+    ap_type_id = models.ForeignKey(AccumulatePointsType, on_delete=models.CASCADE, db_column='ap_type_id')
+    weixin_open_id = models.CharField(max_length=50)
+
+    def __str__():
+        return 'Point is: ' + str(points)
+
+    class Meta:
+        db_table = 'AccumulatePointsLog'
+
+class V_Members(models.Model):
+    name = models.CharField(max_length=20)
+    weixin_open_id = models.CharField(max_length=50, primary_key=True)
+    dep_id = models.IntegerField()
+    work_type_id = models.IntegerField()
+    position_id = models.IntegerField()
+    allow_red_packet = models.BooleanField()
+    three_new = models.BooleanField()
+    deleted = models.BooleanField()
+    dep_name = models.CharField(max_length=50)
+    type_name = models.CharField(max_length=20)
+    position_name = models.CharField(max_length=20)
+    verified = models.BooleanField()
+
+    def __str__():
+        return 'Member is: ' + name
+
+    class Meta:
+        db_table = 'v_members'
+
+class NoticeBoard(models.Model):
+    nb_id = models.AutoField(primary_key=True)
+    nb_type = models.IntegerField()
+    content = models.CharField(max_length=255)
+    color = models.CharField(max_length=20)
+    date_start = models.DateTimeField()
+    date_stop = models.DateTimeField()
+    date_time = models.DateTimeField()
+
+    class Meta:
+        db_table = 'NoticeBoard'

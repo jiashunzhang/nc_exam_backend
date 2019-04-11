@@ -9,9 +9,12 @@ from exam_admin.models import *
 from django.http import HttpResponse
 from datetime import datetime
 from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 from django.db.models import Count, Sum, Max, Avg
 from functools import reduce
 from openpyxl import load_workbook, Workbook
+
+from jsonrpc.backend.django import api
 
 import simplejson as json
 import logging, os, sys, operator, uuid
@@ -28,7 +31,7 @@ def getTopsComboData(request):
     ret_list = list()
     try:
         if combo == 'workshop':
-            for dep in Department.objects.filter(level__lt=7).order_by('level'):
+            for dep in Department.objects.filter(level__lt=8).order_by('level'):
                 ret_list.append({ 'value': dep.dep_id, 'label': dep.dep_name })
         elif combo == 'worktype':
             for wt in WorkType.objects.all().order_by('work_type_id'):
@@ -55,7 +58,7 @@ def getTopsComboDataByPaper(request):
         if combo == 'workshop':
             if paper_ids != '':
                 deps = PaperDepRange.objects.filter(paper_id__in=pid_arr).values_list('dep_id')
-                deps_in_dep = Department.objects.filter(level__lt=7, dep_id__in=deps).order_by('level')
+                deps_in_dep = Department.objects.filter(level__lt=8, dep_id__in=deps).order_by('level')
             else:
                 deps_in_dep = Department.objects.all();
 
@@ -158,6 +161,7 @@ def getMembers(request):
     id_card = request.POST.get('idcard', '')
     position = request.POST.get('position', '')
     threenew = request.POST.get('three_new', '0')
+    allow_rp = request.POST.get('allow_rp', '1')
 
     try:
         m_workshop = ''
@@ -215,6 +219,7 @@ def getMembers(request):
                         'verified': ('是' if m.verified else '否'), \
                         'deleted': ('是' if m.deleted else '否'), \
                         'three_new': ('是' if m.three_new  else '否'), \
+                        'allow_rp': ('是' if m.allow_red_packet else '否'), \
                         'intro': m.intro })
         return HttpResponse(json.dumps(ret), content_type='text/json')
     except Exception as e:
@@ -257,12 +262,20 @@ def getInfoTreeTop(request):
         conds.append(Q(verified=True) & Q(deleted=False) & Q(weixin_open_id__isnull=False) & (~Q(weixin_open_id='')))
         ret = list()
         members = Members.objects.filter(reduce(operator.and_, conds)).values_list('weixin_open_id', flat=True)
-        papers = ExamPapers.objects\
-            .filter(weixin_open_id__in=members).filter(reduce(operator.and_, paper_conds))\
-            .values('paper_id')\
-            .annotate(exam_count=Count('exam_paper_id'))\
-            .values('paper_id', 'exam_count', 'name', 'passing_score')
-            
+
+        if len(paper_conds) == 0:
+            papers = ExamPapers.objects\
+                .filter(weixin_open_id__in=members)\
+                .values('paper_id')\
+                .annotate(exam_count=Count('exam_paper_id'))\
+                .values('paper_id', 'exam_count', 'name', 'passing_score')
+        else:
+            papers = ExamPapers.objects\
+                .filter(weixin_open_id__in=members).filter(reduce(operator.and_, paper_conds))\
+                .values('paper_id')\
+                .annotate(exam_count=Count('exam_paper_id'))\
+                .values('paper_id', 'exam_count', 'name', 'passing_score')
+                
         for p in papers:
             should_mem_count = p['exam_count']
             examinee_count = ExamPapers.objects.filter(weixin_open_id__in=members, paper_id=p['paper_id'], done=True).count()
@@ -859,6 +872,7 @@ def modMember(request):
     pos_id = request.POST.get('position', '')
     deleted = request.POST.get('deleted', '0')
     three_new = request.POST.get('three_new', '0')
+    allow_rp = request.POST.get('allow_rp', '1')
     intro = request.POST.get('intro', '')
 
     if name == '' or ws_id == '' or wt_id == '' or pos_id == '' or idcard == '':
@@ -888,6 +902,7 @@ def modMember(request):
         mem.deleted = (False if deleted == '0' else True)
         mem.three_new = (False if three_new == '0' else True)
         mem.intro = intro
+        mem.allow_red_packet = (False if allow_rp == '0' else True)
         mem.save()
 
         return HttpResponse('{ \"errmsg\": \"OK\" }', content_type='text/json')
@@ -904,6 +919,7 @@ def addMember(request):
     pos_id = request.POST.get('position', '')
     deleted = request.POST.get('deleted', '0')
     three_new = request.POST.get('three_new', '0')
+    allow_rp = request.POST.get('allow_rp', '1')
     intro = request.POST.get('intro', '')
 
     if name == '' or ws_id == '' or wt_id == '' or pos_id == '' or idcard == '':
@@ -932,6 +948,7 @@ def addMember(request):
         mem.position_id = pos
         mem.deleted = (False if deleted == '0' else True)
         mem.three_new = (False if three_new == '0' else True)
+        mem.allow_red_packet = (False if allow_rp == '0' else True)
         mem.intro = intro
         mem.verified = True
         mem.save()
@@ -975,7 +992,11 @@ def getDWPConstraint(request):
         
         recs = DepWorkType.objects.raw('''select (@cnt := @cnt + 1) as id,dwt.dep_id, wtp.position_id, wtp.work_type_id 
                                           from DepWorkType dwt 
-                                          inner join WorkTypePosition wtp on dwt.work_type_id=wtp.work_type_id cross join (select @cnt := 0) t''' + where_str + conds_str)
+                                          inner join WorkTypePosition wtp on dwt.work_type_id=wtp.work_type_id
+                                          inner join (select dwt.dep_id, dwt.work_type_id, dp.position_id
+                                            from DepWorkType dwt inner join DepPosition dp
+                                            on dwt.dep_id=dp.dep_id) dp on dp.dep_id=dwt.dep_id and wtp.work_type_id=dp.work_type_id and dp.position_id=wtp.position_id
+                                          cross join (select @cnt := 0) t''' + where_str + conds_str)
         ws_ids = set()
         wt_ids = set()
         ps_ids = set()
@@ -1038,6 +1059,264 @@ def getDWPConstraint(request):
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         return HttpResponse('{ \"errmsg\": \"%s\", \"lineno\": \"%s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
+
+@csrf_exempt
+def getTestsInfos(request):
+    key = request.POST.get('key', '车间')
+    time_start = request.POST.get('time_start', (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S'))
+    time_end = request.POST.get('time_end', datetime.now().strftime('%Y-%m-%s %H:%M:%S'))
+
+    try:
+        if key == '车间':
+            ret = createTestsInfoResult('dep', time_start, time_end)
+        elif key == '工种':
+            ret = createTestsInfoResult('work_type', time_start, time_end)
+        elif key == '职名':
+            ret = createTestsInfoResult('position', time_start, time_end)
+        elif key == '题库类别':
+            ret = createTestsInfoResult('paper_type', time_start, time_end)
+        else:
+            ret = None
+
+        return HttpResponse(ret, content_type='text/json')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return HttpResponse('{ \"errmsg\": \"%s.lineno: %s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
+
+@csrf_exempt
+def getTestsSumDetail(request):
+    time_start = request.POST.get('time_start', (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S'))
+    time_end = request.POST.get('time_end', datetime.now().strftime('%Y-%m-%s %H:%M:%S'))
+    dep_id = request.POST.get('workshop', -1)
+    work_type_id = request.POST.get('worktype', -1)
+    position_id = request.POST.get('position', -1)
+    
+    try:
+        if dep_id == '':
+            dep_id = ','.join(map(lambda item: str(item), Department.objects.values_list('dep_id', flat=True)))
+        if work_type_id == '':
+            work_type_id = ','.join(map(lambda item: str(item), WorkType.objects.values_list('work_type_id', flat=True)))
+        if position_id == '':
+            position_id = ','.join(map(lambda item: str(item), Position.objects.values_list('position_id', flat=True)))
+
+        ret = None
+        with connection.cursor() as cursor:
+            cursor.callproc('get_tests_sum_detail', (time_start, time_end, dep_id, work_type_id, position_id))
+            ret = dictfetchall(cursor)
+        
+        return HttpResponse(json.dumps(ret), content_type='text/json')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return HttpResponse('{ \"errmsg\": \"%s.lineno: %s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
+
+@csrf_exempt
+def getRPandAPSum(request):
+    time_start = request.POST.get('time_start', datetime.now() - relativedelta(months=1))
+    time_end = request.POST.get('time_end', datetime.now())
+    ws = request.POST.get('workshop', '')
+    wt = request.POST.get('worktype', '')
+    ps = request.POST.get('position', '')
+    only_rewarded = request.POST.get('only_rewarded', '0')
+    only_rewarded = (False if only_rewarded == '0' else True)
+
+    try:
+        mem_conds = list()
+        if ws != '':
+            mem_conds.append(Q(dep_id=int(ws)))
+        if wt != '':
+            mem_conds.append(Q(work_type_id=int(wt)))
+        if ps != '':
+            mem_conds.append(Q(position_id=int(ps)))
+        
+        mem_conds.append(Q(allow_red_packet=True))
+        mem_conds.append(Q(deleted=False))
+        mem_conds.append(Q(verified=True))
+        mem_conds.append(~Q(weixin_open_id=''))
+        mem_conds.append(Q(weixin_open_id__isnull=False))
+
+        mems = V_Members.objects.filter(reduce(operator.and_, mem_conds))
+        ret = list()
+        for m in mems:
+            rp = TestRedPackets.objects.filter(weixin_open_id=m.weixin_open_id, date_time__gte=time_start, date_time__lte=time_end).aggregate(rp_amount=Sum('amount'))
+            ap = AccumulatePointsLog.objects.filter(weixin_open_id=m.weixin_open_id, date_time__gte=time_start, date_time__lte=time_end).aggregate(ap_amount=Sum('points'))
+            rp_amount = float((0.0 if rp['rp_amount'] is None else rp['rp_amount']))
+            ap_amount = float((0.0 if ap['ap_amount'] is None else ap['ap_amount']))
+
+            if only_rewarded and rp_amount == 0.0 and ap_amount == 0.0:
+                continue
+
+            ret.append({
+                'weixin_open_id': m.weixin_open_id,
+                'name': m.name,
+                'workshop': m.dep_name,
+                'worktype': m.type_name,
+                'position': m.position_name,
+                'rp_amount': '%.2f' % rp_amount,
+                'ap_amount': '%.2f' % ap_amount
+            })
+        return HttpResponse(json.dumps(ret), content_type='text/json')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return HttpResponse('{ \"errmsg\": \"%s行号：%s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
+@csrf_exempt
+def getRPDetail(request):
+    is_rp = request.POST.get('is_rp', '1')
+    woi = request.POST.get('weixin_open_id', '')
+    time_start = request.POST.get('time_start', datetime.now() - relativedelta(months=1))
+    time_end = request.POST.get('time_end', datetime.now())
+
+    try:
+        ret = list()
+        if is_rp == '1':
+            rps = TestRedPackets.objects.filter(weixin_open_id=woi,
+                    date_time__gte=datetime.strptime(time_start, '%Y-%m-%d %H:%M:%S'),
+                    date_time__lte=datetime.strptime(time_end, '%Y-%m-%d %H:%M:%S')).\
+                    select_related('red_packet_type_id', 'test_paper_id__paper_id').order_by('-date_time')
+
+            for rp in rps:
+                ret.append({
+                    'amount': rp.amount,
+                    'reward_type': rp.red_packet_type_id.pt_name,
+                    'source': rp.test_paper_id.paper_id.paper_name,
+                    'date_time': rp.date_time.strftime('%Y-%m-%d %H:%M:%S')
+                })
+        else:
+            aps = AccumulatePointsLog.objects.filter(weixin_open_id=woi,
+                    date_time__gte=datetime.strptime(time_start, '%Y-%m-%d %H:%M:%S'),
+                    date_time__lte=datetime.strptime(time_end, '%Y-%m-%d %H:%M:%S')).\
+                    prefetch_related('ap_type_id', 'test_paper_id__paper_id').order_by('-date_time')
+
+            for ap in aps:
+                ret.append({
+                    'amount': ap.points,
+                    'reward_type': ap.ap_type_id.type_name,
+                    'source': ('' if not hasattr(ap, 'test_paper_id')  else ap.test_paper_id.paper_id.paper_name),
+                    'date_time': ap.date_time.strftime('%Y-%m-%d %H:%M:%S')
+                })
+
+        return HttpResponse(json.dumps(ret), content_type='text/json')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return HttpResponse('{ \"errmsg\": \"%s行号：%s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
+@csrf_exempt
+def getNoticeBoards(request):
+    time_start = request.POST.get('time_start', None)
+    time_end = request.POST.get('time_end', None)
+
+    if not time_start or not time_end:
+        return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
+
+    try:
+        nbs = NoticeBoard.objects.filter(
+                date_time__gte=datetime.strptime(time_start, '%Y-%m-%d %H:%M:%S'),
+                date_time__lte=datetime.strptime(time_end, '%Y-%m-%d %H:%M:%S'),
+                nb_type=1
+                )
+        ret = list()
+        for nb in nbs:
+            ret.append({
+                'nb_id': nb.nb_id,
+                'content': nb.content,
+                'color': nb.color,
+                'date_start': nb.date_start.strftime('%Y年%m月%d日 %H:%M:%S'),
+                'date_end': nb.date_stop.strftime('%Y年%m月%d日 %H:%M:%S')
+            })
+        return HttpResponse(json.dumps(ret), content_type='text/json')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return HttpResponse('{ \"errmsg\": \"%s行号：%s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
+
+@csrf_exempt
+def saveNoticeBoard(request):
+    nb_id = request.POST.get('nb_id', None)
+    content = request.POST.get('content', None)
+    color = request.POST.get('color', None)
+    date_start = request.POST.get('date_start', None)
+    date_stop = request.POST.get('date_stop', None)
+    if content == '' or content is None or not color or not date_start or not date_stop:
+        return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
+    
+    try:
+        if nb_id:
+            nb_ret_obj = NoticeBoard.objects.get_or_create(nb_id=nb_id)
+            nb = nb_ret_obj[0]
+            nb.content = content
+            nb.color = color
+            nb.date_start = datetime.strptime(date_start, '%Y-%m-%d %H:%M:%S')
+            nb.date_stop = datetime.strptime(date_stop, '%Y-%m-%d %H:%M:%S')
+            nb.save()
+        else:
+            nb = NoticeBoard()
+            nb.content = content
+            nb.color = color
+            nb.date_start = datetime.strptime(date_start, '%Y-%m-%d %H:%M:%S')
+            nb.date_stop = datetime.strptime(date_stop, '%Y-%m-%d %H:%M:%S')
+            nb.save()
+        return HttpResponse('{ \"ret\": \"OK\" }', content_type='text/json')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return HttpResponse('{ \"errmsg\": \"%s行号：%s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
+
+@csrf_exempt
+def deleteNoticeBoard(request):
+    nb_id = request.POST.get('nb_id', None)
+    if not nb_id:
+        return HttpResponse('{ \"errmsg\": \"请求异常。\" }', content_type='text/json')
+    
+    try:
+        NoticeBoard.objects.filter(nb_id=nb_id).delete()
+        return HttpResponse('{ \"ret\": \"OK\" }', content_type='text/json')
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        return HttpResponse('{ \"errmsg\": \"%s行号：%s\" }' % (str(e), exc_tb.tb_lineno), content_type='text/json')
+
+@api.dispatcher.add_method
+def get_exam_info(request):
+    exams = list(ExamPapers.objects.values('exam_paper_id', 'name'))
+    return exams
+
+@api.dispatcher.add_method
+def openid_to_mem_info(openids):
+    try:
+        if not openids:
+            return { 'internal_err_msg': '请求异常，openids可能为空。' };
+
+        oids = openids.split(',')
+        if not Members.objects.filter(weixin_open_id__in=oids).exists():
+            return { 'internal_err_msg': '未找到openid' + openids + '对应的用户。' }
+        
+        mems = Members.objects.select_related().filter(weixin_open_id__in=oids)
+        ret = [ { 'openid': m.weixin_open_id, 'name': m.name, 'dep': m.dep_id.dep_name, 'prof': m.work_type_id.type_name, 'pos': m.position_id.name } for m in mems ]
+        
+        return ret
+    except Exception as e:
+        return str(e)
+
+def createTestsInfoResult(tp, time_start, time_end):
+    ret = None
+    catalogues = None
+    summaries = None
+    chars = None
+    ret = { 'catalogues': list() }
+    with connection.cursor() as cursor:
+        cursor.callproc('get_tests_catalogues_by_' + tp, (time_start, time_end))
+        catalogues = dictfetchall(cursor)
+
+    for cata in catalogues:
+        with connection.cursor() as cursor:
+            cursor.callproc('get_summary_by_' + tp, (cata[tp + '_id'], time_start, time_end))
+            summaries = dictfetchall(cursor)
+
+        with connection.cursor() as cursor:
+            cursor.callproc('get_tests_chart_by_' + tp, (cata[tp + '_id'], time_start, time_end))
+            charts = dictfetchall(cursor)
+        ret['catalogues'].append({
+            'cata_name': cata[tp + '_name'],
+            'cata_id': cata[tp + '_id'],
+            'cata_summaries': summaries,
+            'cata_charts': charts
+        })
+    return json.dumps(ret)
 
 def dictfetchall(cursor):
     columns = [col[0] for col in cursor.description]
